@@ -22,7 +22,6 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new() { Title = "Your API", Version = "v1" });
-    c.AddServer(new OpenApiServer { Url = "https://api.krishivaweb.com" });
 });
 
 IConfigurationSection appSettingsSection = builder.Configuration.GetSection("AppSettings");
@@ -52,11 +51,16 @@ builder.Services.InjectMapperDependnecies();
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+//if (app.Environment.IsDevelopment())
+//{
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Your API V1");
+    c.RoutePrefix = "swagger";
+});
+
+//}
 
 app.UseCors(MyAllowSpecificOrigins);
 
