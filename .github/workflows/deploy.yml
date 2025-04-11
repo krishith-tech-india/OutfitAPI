@@ -18,6 +18,11 @@ jobs:
               with:
                   dotnet-version: "8.0.x"
 
+            - name: Create appsettings.json from secret
+              run: |
+                  mkdir -p publish
+                  echo '${{ secrets.APPSETTINGS_JSON }}' > publish/appsettings.json
+
             - name: Publish .NET Core app
               run: |
                   dotnet publish -c Release -o publish
