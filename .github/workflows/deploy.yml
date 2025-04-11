@@ -1,0 +1,30 @@
+name: Deploy .NET Core App to EC2
+
+on:
+  push:
+    branches:
+      - main  # or your deployment branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H 65.2.6.26 >> ~/.ssh/known_hosts
+
+    - name: Deploy to EC2
+      run: |
+        ssh ec2-user@65.2.6.26 << 'EOF'
+          cd ~/OutfitAPI
+          git pull origin main
+          sudo systemctl restart outfitapi
+        EOF
+
