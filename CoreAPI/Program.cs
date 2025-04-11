@@ -21,7 +21,7 @@ builder.Services.AddSwaggerGen();
 
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new() { Title = "Your API", Version = "v1" });
+    c.SwaggerDoc("v1", new() { Title = "Outfit API", Version = "v1" });
 });
 
 IConfigurationSection appSettingsSection = builder.Configuration.GetSection("AppSettings");
@@ -56,7 +56,7 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Your API V1");
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Version V1");
     c.RoutePrefix = "swagger";
 });
 
