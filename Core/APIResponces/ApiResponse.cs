@@ -5,10 +5,11 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Core
 {
-    public class ApiResponse
+    public class ApiResponse : ActionResult
     {
         [NotNull]
         public HttpStatusCode StatusCode { get; set; }

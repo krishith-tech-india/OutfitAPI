@@ -11,11 +11,12 @@ namespace Core
     public class ApiException : Exception
     {
         [NotNull]
+        private string errorMessage;
         public HttpStatusCode StatusCode { get; set; }
-        public string ErrorMessage { get; set; }
-        public ApiException(HttpStatusCode httpStatusCode, string errorMessage)
+        public override string Message { get { return errorMessage; } }
+        public ApiException(HttpStatusCode httpStatusCode, string errorMsg)
         {
-            ErrorMessage = errorMessage;
+            errorMessage = errorMsg;
             StatusCode = httpStatusCode;
         }
     }

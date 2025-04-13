@@ -9,7 +9,7 @@ namespace CoreAPI.Controllers
     {
         private static readonly List<string> Summaries = new()
         {
-            "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
+            "Freezing", "Bracing", "Chilly", "Cool"
         };
 
         private readonly ILogger<WeatherForecastController> _logger;
@@ -23,15 +23,18 @@ namespace CoreAPI.Controllers
         public ApiResponse GetWeatherForecast()
         {
             return
-                new ApiResponse(
-                    System.Net.HttpStatusCode.OK,
-                        Enumerable.Range(1, 5).Select(index => new WeatherForecast
-                        {
-                            Date = DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                            TemperatureC = Random.Shared.Next(-20, 55),
-                            Summary = Summaries[Random.Shared.Next(Summaries.Count)]
-                        }).ToArray()
-                    );
+                new ApiResponse(System.Net.HttpStatusCode.InternalServerError, Summaries);
+        }
+
+        [HttpGet("{id}")]
+        public ApiResponse GetWeatherForecast(int id)
+        {
+            if (id >= Summaries.Count)
+            {
+                throw new ApiException(System.Net.HttpStatusCode.NotFound, "No SummaryFound");
+            }
+
+            return new ApiResponse(System.Net.HttpStatusCode.OK, Summaries[id]);
         }
 
         [HttpPost]

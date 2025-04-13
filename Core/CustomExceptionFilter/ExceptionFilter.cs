@@ -15,9 +15,9 @@ namespace Core.CustomExceptionFilter
             if (context.Exception is ApiException handledException)
             {
                 context.Result =
-                    new ObjectResult(new ApiResponse(
+                    new ObjectResult(new ApiException(
                             handledException.StatusCode,
-                            handledException.ErrorMessage
+                            handledException.Message
                         ))
                     {
                         StatusCode = (int)handledException.StatusCode,
