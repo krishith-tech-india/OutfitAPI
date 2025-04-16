@@ -1,0 +1,1 @@
+dotnet ef dbcontext scaffold "Host=database-1.c7koaq2em88l.ap-south-1.rds.amazonaws.com;Port=5432;Database=OutfitDev;Username=krishith;Password=57872testdB" Npgsql.EntityFrameworkCore.PostgreSQL -o Models --context-dir Contexts --context OutfitDBContext --data-annotations 
