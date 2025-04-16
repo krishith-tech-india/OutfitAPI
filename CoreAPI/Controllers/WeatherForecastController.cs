@@ -23,7 +23,7 @@ namespace CoreAPI.Controllers
         public ApiResponse GetWeatherForecast()
         {
             return
-                new ApiResponse(System.Net.HttpStatusCode.InternalServerError, Summaries);
+                new ApiResponse(System.Net.HttpStatusCode.OK, Summaries);
         }
 
         [HttpGet("{id}")]

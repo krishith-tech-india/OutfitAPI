@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Core
 {
-    public class ApiResponse : ActionResult
+    public class ApiResponse
     {
         [NotNull]
         public HttpStatusCode StatusCode { get; set; }
