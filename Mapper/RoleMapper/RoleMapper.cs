@@ -14,4 +14,16 @@ public class RoleMapper : IRoleMapper
             RoleDesc = roleDto.Description
         };
     }
+
+    public RoleDto GetRoleDto(Role role)
+    {
+        return new RoleDto
+        {
+
+            Id = role.Id,
+            Name = role.RoleName,
+            Description = role.RoleDesc,
+            AddedOn = role.AddedOn
+        };
+    }
 }

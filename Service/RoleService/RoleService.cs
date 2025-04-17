@@ -1,6 +1,8 @@
 using Core;
+using Data.Models;
 using Dto;
 using Mapper;
+using Microsoft.EntityFrameworkCore;
 using Repo;
 
 namespace Service;
@@ -19,7 +21,7 @@ public class RoleService : IRoleService
         _roleMapper = roleMapper;
     }
 
-    public async Task AddRole(RoleDto roleDto)
+    public async Task AddRoleAsync(RoleDto roleDto)
     {
         var roleEntity = _roleMapper.GetEntity(roleDto);
         roleEntity.AddedOn = DateTime.Now;
@@ -30,6 +32,42 @@ public class RoleService : IRoleService
             throw new ApiException(System.Net.HttpStatusCode.Conflict, $"Role with name {roleDto.Name} aleady exist");
 
         await _roleRepo.InsertAsync(roleEntity);
+        await _roleRepo.SaveChangesAsync();
+    }
+
+    public async Task<RoleDto> GetRoleByIdAsync(int id)
+    {
+        if (id <= 0)
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"Invalid role id");
+        var role = await _roleRepo.GetByIdAsync(id);
+        if (role == null)
+            throw new ApiException(System.Net.HttpStatusCode.NotFound, $"Role id {id} not exist");
+
+        return _roleMapper.GetRoleDto(role);
+    }
+
+    public async Task<List<RoleDto>> GetRolesAsync()
+    {
+        try
+        {
+            var roles = await _roleRepo.Select(x => !x.IsDeleted.HasValue || !x.IsDeleted.Value).ToListAsync();
+            return roles.Select(x => _roleMapper.GetRoleDto(x)).ToList();
+        }
+        catch(Exception ex)
+        {
+            throw;
+        }
+        
+    }
+
+    public async Task DeleteRoleAsync(int id)
+    {
+        if (id <= 0)
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"Invalid role Id");
+        var role = await _roleRepo.GetByIdAsync(id);
+        if (role == null)
+            throw new ApiException(System.Net.HttpStatusCode.NotFound, $"Role id {id} not exist");
+        _roleRepo.Delete(role);
         await _roleRepo.SaveChangesAsync();
     }
 }

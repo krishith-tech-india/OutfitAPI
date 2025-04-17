@@ -19,14 +19,30 @@ namespace API.Controllers
             _roleService = roleService;
         }
 
+        [HttpGet]
+        public ApiResponse GetRole()
+        {
+            return new ApiResponse(HttpStatusCode.OK, _roleService.GetRolesAsync());
+        }
+
+        [HttpGet("{id}")]
+        public ApiResponse GetRoles(int id)
+        {
+            return new ApiResponse(HttpStatusCode.OK, _roleService.GetRoleByIdAsync(id));
+        }
+
         [HttpPost]
         public async Task<ApiResponse> AddRole(RoleDto roleDto)
         {
-            await _roleService.AddRole(roleDto);
+            await _roleService.AddRoleAsync(roleDto);
             return new ApiResponse(HttpStatusCode.OK);
         }
 
-        //Get All
-        //Get 
+        [HttpDelete("{id}")]
+        public async Task<ApiResponse> DeleteRole(int id)
+        {
+            await _roleService.DeleteRoleAsync(id);
+            return new ApiResponse(HttpStatusCode.OK);
+        } 
     }
 }
