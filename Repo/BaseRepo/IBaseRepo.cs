@@ -5,7 +5,7 @@ namespace Repo
 {
     public interface IBaseRepo<T>
     {
-        //IDbContextTransaction BeginTransaction();
+        IDbContextTransaction BeginTransaction();
         Task CompleTransaction(IDbContextTransaction transaction);
         Task<T?> GetByIdAsync(object id);
         IQueryable<T> GetQueyable();
@@ -14,6 +14,6 @@ namespace Repo
         void Delete(T entity);
         IQueryable<T> Select(Expression<Func<T, bool>> expression);
         Task<bool> Any(Expression<Func<T, bool>> expression);
-        //Task SaveChangesAsync();
+        Task SaveChangesAsync();
     }
 }

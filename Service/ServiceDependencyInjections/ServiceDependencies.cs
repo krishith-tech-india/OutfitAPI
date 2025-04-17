@@ -6,8 +6,7 @@ namespace Service
     {
         public static void InjectServiceDependencies(this IServiceCollection service)
         {
-            //service.AddScoped<IUserService, UserService>();
-
+            service.AddScoped<IRoleService, RoleService>();
         }
     }
 }
