@@ -10,4 +10,5 @@ public interface IRoleService
     Task<List<RoleDto>> GetRolesAsync();
     Task DeleteRoleAsync(int id);
     Task<RoleDto> GetRoleByIdAsync(int id);
+    Task UpadateRoleAsync(int id, RoleDto roleDto);
 }

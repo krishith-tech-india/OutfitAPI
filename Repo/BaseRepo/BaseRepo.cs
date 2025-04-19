@@ -18,7 +18,7 @@ namespace Repo
             _db = _context.Set<T>();
         }
 
-        public async Task<bool> Any(Expression<Func<T, bool>> expression)
+        public async Task<bool> AnyAsync(Expression<Func<T, bool>> expression)
         {
             return await _db.AnyAsync(expression);
         }
@@ -40,10 +40,10 @@ namespace Repo
             }
         }
 
-        public void Delete(T entity)
-        {
-            _db.Remove(entity);
-        }
+        //public void Delete(T entity)
+        //{
+        //    _db.Remove(entity);
+        //}
 
         public async Task<T?> GetByIdAsync(object id)
         {

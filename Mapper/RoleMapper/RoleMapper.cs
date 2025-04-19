@@ -23,7 +23,6 @@ public class RoleMapper : IRoleMapper
             Id = role.Id,
             Name = role.RoleName,
             Description = role.RoleDesc,
-            AddedOn = role.AddedOn
         };
     }
 }

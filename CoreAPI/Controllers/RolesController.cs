@@ -20,15 +20,15 @@ namespace API.Controllers
         }
 
         [HttpGet]
-        public ApiResponse GetRole()
+        public async Task<ApiResponse> GetRole()
         {
-            return new ApiResponse(HttpStatusCode.OK, _roleService.GetRolesAsync());
+            return new ApiResponse(HttpStatusCode.OK, await _roleService.GetRolesAsync());
         }
 
         [HttpGet("{id}")]
-        public ApiResponse GetRoles(int id)
+        public async Task<ApiResponse> GetRoles(int id)
         {
-            return new ApiResponse(HttpStatusCode.OK, _roleService.GetRoleByIdAsync(id));
+            return new ApiResponse(HttpStatusCode.OK, await _roleService.GetRoleByIdAsync(id));
         }
 
         [HttpPost]
@@ -43,6 +43,13 @@ namespace API.Controllers
         {
             await _roleService.DeleteRoleAsync(id);
             return new ApiResponse(HttpStatusCode.OK);
-        } 
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ApiResponse> UpadateRole(int id,RoleDto roleDto)
+        {
+            await _roleService.UpadateRoleAsync(id,roleDto);
+            return new ApiResponse(HttpStatusCode.OK);
+        }
     }
 }
