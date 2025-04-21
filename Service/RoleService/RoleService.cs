@@ -3,6 +3,7 @@ using Data.Models;
 using Dto;
 using Mapper;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Internal;
 using Repo;
 
 namespace Service;
@@ -11,19 +12,22 @@ public class RoleService : IRoleService
 {
     private readonly IRoleRepo _roleRepo;
     private readonly IRoleMapper _roleMapper;
+    private readonly IUserRepo _userRepo;
 
     public RoleService(
         IRoleRepo roleRepo,
-        IRoleMapper roleMapper
+        IRoleMapper roleMapper,
+        IUserRepo userRepo
     )
     {
         _roleRepo = roleRepo;
         _roleMapper = roleMapper;
+        _userRepo = userRepo;
     }
     public async Task<List<RoleDto>> GetRolesAsync()
     {
-            var roles = await _roleRepo.GetAllRolesAsync();
-            return roles.Select(x => _roleMapper.GetRoleDto(x)).ToList();
+        var roles = await _roleRepo.GetAllRolesAsync();
+        return roles.Select(x => _roleMapper.GetRoleDto(x)).ToList();
     }
     public async Task<RoleDto> GetRoleByIdAsync(int id)
     {
@@ -36,6 +40,8 @@ public class RoleService : IRoleService
     }
     public async Task DeleteRoleAsync(int id)
     {
+        if (await _userRepo.CheckUserExistUnderRoleIdAsync(id))
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"User Id available In {id} Role Id.");
         var role = await _roleRepo.GetRoleByIdAsync(id);
         role.IsDeleted = true;
         await _roleRepo.UpdateRoleAsync(role);
@@ -49,5 +55,3 @@ public class RoleService : IRoleService
     }
 
 }
-
-//Controller => Service => repository

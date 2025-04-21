@@ -8,6 +8,7 @@ namespace Repo
         {
             service.AddScoped(typeof(IBaseRepo<>), typeof(BaseRepo<>));
             service.AddScoped<IRoleRepo, RoleRepo>();
+            service.AddScoped<IUserRepo, UserRepo>();
         }
     }
 }

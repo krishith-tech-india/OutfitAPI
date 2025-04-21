@@ -13,13 +13,13 @@ public class RoleRepo : BaseRepo<Role>, IRoleRepo
     }
     public async Task<List<Role>> GetAllRolesAsync()
     {
-        return await Select(x => x.IsDeleted == false).ToListAsync();
+        return await Select(x => !x.IsDeleted.Value).ToListAsync();
     }
 
     public async Task<Role> GetRoleByIdAsync(int id)
     {
         var role = await GetByIdAsync(id);
-        if (role == null || role.IsDeleted == true)
+        if (role == null || role.IsDeleted.Value)
             throw new ApiException(System.Net.HttpStatusCode.NotFound, $"Role id {id} not exist");
         return role;
     }
@@ -31,7 +31,7 @@ public class RoleRepo : BaseRepo<Role>, IRoleRepo
 
     public async Task InsertRoleAsync(Role role)
     {
-        if (role.RoleName == null)
+        if (string.IsNullOrWhiteSpace(role.RoleName))
             throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"Role name is required");
         if (await CheckIsRoleExistByNameAsync(role.RoleName))
             throw new ApiException(System.Net.HttpStatusCode.Conflict, $"Role with name {role.RoleName} aleady exist");
@@ -41,10 +41,14 @@ public class RoleRepo : BaseRepo<Role>, IRoleRepo
         await SaveChangesAsync();
     }
 
-    // not complate
+    public async Task<bool> CheckIsRoleIdExistAsync(int id)
+    {
+        return await AnyAsync(x => x.Id.Equals(id) && !x.IsDeleted.Value);
+    }
+
     public async Task UpdateRoleAsync(Role role)
     {
-        if (role.RoleName == null)
+        if (string.IsNullOrWhiteSpace(role.RoleName))
             throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"Role name is required");
         role.LastUpdatedOn = DateTime.Now;
         //role.LastUpdatedBy = 0;

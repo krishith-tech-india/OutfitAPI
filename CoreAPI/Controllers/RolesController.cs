@@ -26,7 +26,7 @@ namespace API.Controllers
         }
 
         [HttpGet("{id}")]
-        public async Task<ApiResponse> GetRoles(int id)
+        public async Task<ApiResponse> GetRoleById(int id)
         {
             return new ApiResponse(HttpStatusCode.OK, await _roleService.GetRoleByIdAsync(id));
         }
