@@ -8,6 +8,8 @@ namespace Mapper
         {
             service.AddScoped<IRoleMapper, RoleMapper>();
             service.AddScoped<IUserMapper, UserMapper>();
+            service.AddScoped<IAddressMapper, AddressMapper>();
+            service.AddScoped<IImageTypeMapper, ImageTypeMapper>();
         }
     }
 }

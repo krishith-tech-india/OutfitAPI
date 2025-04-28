@@ -8,6 +8,8 @@ namespace Service
         {
             service.AddScoped<IRoleService, RoleService>();
             service.AddScoped<IUserService, UserService>();
+            service.AddScoped<IAddressService, AddressService>();
+            service.AddScoped<IImageTypeService, ImageTypeService>();
         }
     }
 }

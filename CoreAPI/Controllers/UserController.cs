@@ -1,5 +1,6 @@
 ﻿using Core;
 using Dto;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Service;
 using System.Net;
@@ -16,12 +17,14 @@ namespace API.Controllers
             _userService = userService;
         }
 
+        [Authorize]
         [HttpGet]
         public async Task<ApiResponse> GetaAllUser()
         {
             return new ApiResponse(HttpStatusCode.OK, await _userService.GetUsersAsync());
         }
 
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<ApiResponse> GetUserById(int id)
         {
@@ -29,12 +32,12 @@ namespace API.Controllers
         }
 
         [HttpPost]
-        public async Task<ApiResponse> AddUser(UserDto userDto)
+        public async Task<ApiResponse> AddUser([FromBody] UserDto userDto)
         {
-            await _userService.AddUserAsync(userDto);
-            return new ApiResponse(HttpStatusCode.OK);
+            return new ApiResponse(HttpStatusCode.OK,await _userService.AddUserAsync(userDto));
         }
 
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<ApiResponse> DeleteUser(int id)
         {
@@ -42,6 +45,7 @@ namespace API.Controllers
             return new ApiResponse(HttpStatusCode.OK);
         }
 
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<ApiResponse> UpadateUser(int id, UserDto userDto)
         {
@@ -49,5 +53,13 @@ namespace API.Controllers
             return new ApiResponse(HttpStatusCode.OK);
         }
 
+        [HttpPost("authenticate")]
+        public async Task<ApiResponse> LoginUser([FromBody] AuthenticationDto authenticationDto)
+        {
+            // 4.
+            string Token = await _userService.AuthenticateUserAndGetToken(authenticationDto);
+            return new ApiResponse(HttpStatusCode.OK,Token);
+
+        }
     }
 }

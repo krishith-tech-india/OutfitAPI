@@ -17,7 +17,7 @@ public class UserMapper : IUserMapper
             RoleId = userDto.RoleId,
             Email = userDto.Email,
             PhNo = userDto.PhNo,
-            Name = userDto.Name,
+            Name = userDto.Name
         };
     }
 
@@ -29,7 +29,7 @@ public class UserMapper : IUserMapper
             RoleId = user.RoleId,
             Email = user.Email,
             PhNo = user.PhNo,
-            Name = user.Name,
+            Name = user.Name
         };
     }
 }

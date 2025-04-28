@@ -2,6 +2,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Core;
 using Dto;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Service;
 
@@ -19,18 +20,21 @@ namespace API.Controllers
             _roleService = roleService;
         }
 
+        [Authorize]
         [HttpGet]
         public async Task<ApiResponse> GetRole()
         {
             return new ApiResponse(HttpStatusCode.OK, await _roleService.GetRolesAsync());
         }
 
+        [Authorize]
         [HttpGet("{id}")]
         public async Task<ApiResponse> GetRoleById(int id)
         {
             return new ApiResponse(HttpStatusCode.OK, await _roleService.GetRoleByIdAsync(id));
         }
 
+        [Authorize]
         [HttpPost]
         public async Task<ApiResponse> AddRole(RoleDto roleDto)
         {
@@ -38,6 +42,7 @@ namespace API.Controllers
             return new ApiResponse(HttpStatusCode.OK);
         }
 
+        [Authorize]
         [HttpDelete("{id}")]
         public async Task<ApiResponse> DeleteRole(int id)
         {
@@ -45,6 +50,7 @@ namespace API.Controllers
             return new ApiResponse(HttpStatusCode.OK);
         }
 
+        [Authorize]
         [HttpPut("{id}")]
         public async Task<ApiResponse> UpadateRole(int id,RoleDto roleDto)
         {
