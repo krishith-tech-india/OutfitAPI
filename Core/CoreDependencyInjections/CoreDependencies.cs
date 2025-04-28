@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Data.Contexts;
+using Microsoft.EntityFrameworkCore;
 
 namespace Core
 {
@@ -6,7 +8,7 @@ namespace Core
     {
         public static void InjectDBContextDependencies(this IServiceCollection service, string connString)
         {
-            //service.AddDbContext<DBContext>(options => options.UseSqlServer(connString));
+            service.AddDbContext<OutfitDBContext>(options => options.UseNpgsql(connString));
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace Core
+﻿namespace Core.AppSettingConfigs
 {
     public class AppSettings
     {

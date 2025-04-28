@@ -1,10 +1,15 @@
 using Core;
+using Core.AppSettingConfigs;
 using Core.CustomExceptionFilter;
 using Mapper;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Repo;
 using Service;
+using System.IdentityModel.Tokens.Jwt;
+using System.Text;
 
 var MyAllowSpecificOrigins = "_myAllowSpecificOrigins";
 var builder = WebApplication.CreateBuilder(args);
@@ -17,7 +22,36 @@ builder.Services.AddControllers(options =>
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options =>
+{
+    // Add JWT Authentication
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        BearerFormat = "JWT",
+        In = ParameterLocation.Header,
+        Description = "Enter your valid JWT token.\n\nExample: \" abcdef12345\""
+    });
+
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
+
+//2.
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -30,6 +64,28 @@ var appSettings = appSettingsSection.Get<AppSettings>();
 
 var emailConfigurationSection = builder.Configuration.GetSection("EmailConfigurations");
 builder.Services.Configure<EmailConfigurations>(emailConfigurationSection);
+
+var jwtConfigurationSection = builder.Configuration.GetSection("JwtCongigration");
+builder.Services.Configure<JWTConfigrations>(jwtConfigurationSection);
+var jwtConfig = jwtConfigurationSection.Get<JWTConfigrations>();
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtConfig!.Issuer,
+        ValidAudience = jwtConfig.Audience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtConfig.Key))
+    };
+});
 
 builder.Services.AddCors(options =>
 {
@@ -47,8 +103,10 @@ builder.Services.InjectRepoDependencies();
 builder.Services.InjectServiceDependencies();
 builder.Services.InjectMapperDependnecies();
 
-
 var app = builder.Build();
+
+// 10.
+app.UseAuthentication();
 
 // Configure the HTTP request pipeline.
 //if (app.Environment.IsDevelopment())

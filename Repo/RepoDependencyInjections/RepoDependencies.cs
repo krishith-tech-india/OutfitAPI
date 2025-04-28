@@ -7,8 +7,10 @@ namespace Repo
         public static void InjectRepoDependencies(this IServiceCollection service)
         {
             service.AddScoped(typeof(IBaseRepo<>), typeof(BaseRepo<>));
-            //service.AddScoped<IUserService, UserService>();
-
+            service.AddScoped<IRoleRepo, RoleRepo>();
+            service.AddScoped<IUserRepo, UserRepo>();
+            service.AddScoped<IAddressRepo, AddressRepo>();
+            service.AddScoped<IImageTypeRepo, ImageTypeRepo>();
         }
     }
 }
