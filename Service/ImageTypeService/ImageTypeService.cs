@@ -29,6 +29,11 @@ public class ImageTypeService : IImageTypeService
         return imageType.Select(x => _imageTypeMapper.GetImageTypeDto(x)).ToList();
     }
 
+    public async Task<bool> IsImageTypeExistByNameAsync(string name)
+    {
+        return await _imageTypeRepo.CheckIsImageTypeExistByNameAsync(name);
+    }
+
     public async Task<ImageTypeDto> GetImageTypeByIdAsync(int id)
     {
         return _imageTypeMapper.GetImageTypeDto(await _imageTypeRepo.GetImageTypeByIdAsync(id));

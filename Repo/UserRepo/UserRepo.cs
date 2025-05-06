@@ -13,10 +13,7 @@ public class UserRepo : BaseRepo<User>, IUserRepo
 
     public async Task<List<User>> GetAllUserAsync()
     {
-        List<User> users = await Select(x => !x.IsDeleted).ToListAsync();
-        if (users.Count == 0)
-            throw new ApiException(System.Net.HttpStatusCode.NotFound, $"User Not exist");
-        return users;
+        return await Select(x => !x.IsDeleted).ToListAsync();
     }
 
     public async Task<User> GetUserByIdAsync(int id)

@@ -35,6 +35,13 @@ namespace API.Controllers
         }
 
         [Authorize]
+        [HttpGet("/ImageTypeExistByName{Name}")]
+        public async Task<ApiResponse> IsImageTypeExistByName(string Name)
+        {
+            return new ApiResponse(HttpStatusCode.OK, await _imageTypeService.IsImageTypeExistByNameAsync(Name));
+        }
+
+        [Authorize]
         [HttpPost]
         public async Task<ApiResponse> AddImageType(ImageTypeDto imageTypeDto)
         {

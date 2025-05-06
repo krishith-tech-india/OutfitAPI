@@ -77,7 +77,10 @@ public class UserService : IUserService
 
     public async Task<string> AuthenticateUserAndGetToken(AuthenticationDto authDto)
     {
-        // 6.
+        if (string.IsNullOrWhiteSpace(authDto.EmailOrPhone))
+            throw new ApiException(HttpStatusCode.BadRequest, $"Email Or Phone is required");
+        if(string.IsNullOrWhiteSpace(authDto.Password))
+            throw new ApiException(HttpStatusCode.BadRequest, $"Password is required");
         var user = await _userRepo.GetUserByEmailOrPhone(authDto.EmailOrPhone, authDto.Password);
         if (user == null)
             throw new ApiException(HttpStatusCode.NotFound, "User Not found");

@@ -4,6 +4,7 @@ using Data.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,20 +18,15 @@ public class ImageTypeRepo : BaseRepo<ImageType>, IImageTypeRepo
 
     }
 
-    public async Task CheckDataValidOrnotAsync(ImageType imageType)
+    public void CheckDataValidOrnotAsync(ImageType imageType)
     {
         if (string.IsNullOrWhiteSpace(imageType.Name))
             throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"Image Type name is required");
-        if (string.IsNullOrWhiteSpace(imageType.Description))
-            imageType.Description = null;
     }
 
     public async Task<List<ImageType>> GetAllImageTypeAsync()
     {
-        List<ImageType> imageTypes = await Select(x => !x.IsDeleted).ToListAsync();
-        if (imageTypes.Count == 0)
-            throw new ApiException(System.Net.HttpStatusCode.NotFound, $"Image Type Data Not exist");
-        return imageTypes;
+        return await Select(x => !x.IsDeleted).ToListAsync();
     }
 
     public async Task<ImageType> GetImageTypeByIdAsync(int id)
@@ -41,9 +37,18 @@ public class ImageTypeRepo : BaseRepo<ImageType>, IImageTypeRepo
         return imageTypes;
     }
 
+    public async Task<bool> CheckIsImageTypeExistByNameAsync(string name)
+    {
+        return await AnyAsync(x => x.Name.ToLower().Equals(name.ToLower()) && !x.IsDeleted); ;
+    }
+
     public async Task InsertImageTypeAsync(ImageType imageType)
     {
-        await CheckDataValidOrnotAsync(imageType);
+        CheckDataValidOrnotAsync(imageType);
+        if (string.IsNullOrWhiteSpace(imageType.Description))
+            imageType.Description = null;
+        if (await CheckIsImageTypeExistByNameAsync(imageType.Name))
+            throw new ApiException(System.Net.HttpStatusCode.Conflict, $"Image Type name {imageType.Name} aleady exist");
         imageType.AddedOn = DateTime.Now;
         //imageType.AddedBy = 0;
         await InsertAsync(imageType);
@@ -52,7 +57,7 @@ public class ImageTypeRepo : BaseRepo<ImageType>, IImageTypeRepo
 
     public async Task UpdateImageTypeAsync(ImageType imageType)
     {
-        await CheckDataValidOrnotAsync(imageType);
+        CheckDataValidOrnotAsync(imageType);
         imageType.LastUpdatedOn = DateTime.Now;
         //user.LastUpdatedBy = 0;
         Update(imageType);
