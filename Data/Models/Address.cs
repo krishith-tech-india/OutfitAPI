@@ -7,7 +7,6 @@ using Microsoft.EntityFrameworkCore;
 namespace Data.Models;
 
 [Table("address")]
-[Index("IsDeleted", Name = "idx_address_is_deleted")]
 [Index("UserId", Name = "idx_address_user_id")]
 public partial class Address
 {
@@ -63,9 +62,6 @@ public partial class Address
 
     [Column("added_on", TypeName = "timestamp without time zone")]
     public DateTime? AddedOn { get; set; }
-
-    [Column("is_deleted")]
-    public bool? IsDeleted { get; set; }
 
     [ForeignKey("AddedBy")]
     [InverseProperty("AddressAddedByNavigations")]

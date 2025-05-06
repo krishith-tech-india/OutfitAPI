@@ -46,15 +46,17 @@ public partial class OutfitDBContext : DbContext
 
     public virtual DbSet<Wishlist> Wishlists { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) { }
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseNpgsql("Host=database-1.c7koaq2em88l.ap-south-1.rds.amazonaws.com;Port=5432;Database=OutfitDev;Username=krishith;Password=57872testdB");
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Address>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("address_pkey");
+            entity.HasKey(e => e.Id).HasName("pk_address");
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn();
-            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
 
             entity.HasOne(d => d.AddedByNavigation).WithMany(p => p.AddressAddedByNavigations).HasConstraintName("fk_address_added_by");
 
@@ -63,7 +65,7 @@ public partial class OutfitDBContext : DbContext
 
         modelBuilder.Entity<Cart>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("cart_pkey");
+            entity.HasKey(e => e.Id).HasName("pk_cart_pk");
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn();
             entity.Property(e => e.IsDeleted).HasDefaultValue(false);
@@ -79,7 +81,7 @@ public partial class OutfitDBContext : DbContext
 
         modelBuilder.Entity<Image>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("images_pkey");
+            entity.HasKey(e => e.Id).HasName("pk_images");
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn();
             entity.Property(e => e.IsDeleted).HasDefaultValue(false);
@@ -95,7 +97,7 @@ public partial class OutfitDBContext : DbContext
 
         modelBuilder.Entity<ImageType>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("image_type_pkey");
+            entity.HasKey(e => e.Id).HasName("pk_image_type");
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn();
             entity.Property(e => e.IsDeleted).HasDefaultValue(false);
@@ -107,7 +109,7 @@ public partial class OutfitDBContext : DbContext
 
         modelBuilder.Entity<Order>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("order_pkey");
+            entity.HasKey(e => e.Id).HasName("pk_order");
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn();
             entity.Property(e => e.IsDeleted).HasDefaultValue(false);
@@ -127,7 +129,7 @@ public partial class OutfitDBContext : DbContext
 
         modelBuilder.Entity<OrderItem>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("order_item_pkey");
+            entity.HasKey(e => e.Id).HasName("pk_order_item");
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn();
             entity.Property(e => e.IsDeleted).HasDefaultValue(false);
@@ -143,7 +145,7 @@ public partial class OutfitDBContext : DbContext
 
         modelBuilder.Entity<OrderStatus>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("order_status_pkey");
+            entity.HasKey(e => e.Id).HasName("pk_order_status");
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn();
             entity.Property(e => e.IsDeleted).HasDefaultValue(false);
@@ -155,7 +157,7 @@ public partial class OutfitDBContext : DbContext
 
         modelBuilder.Entity<OrderStatusHistory>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("order_status_history_pkey");
+            entity.HasKey(e => e.Id).HasName("pk_order_status_history");
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn();
             entity.Property(e => e.IsDeleted).HasDefaultValue(false);
@@ -171,7 +173,7 @@ public partial class OutfitDBContext : DbContext
 
         modelBuilder.Entity<Product>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("product_pkey");
+            entity.HasKey(e => e.Id).HasName("pk_product");
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn();
             entity.Property(e => e.IsDeleted).HasDefaultValue(false);
@@ -185,7 +187,7 @@ public partial class OutfitDBContext : DbContext
 
         modelBuilder.Entity<ProductCategory>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("product_category_pkey");
+            entity.HasKey(e => e.Id).HasName("pk_product_category");
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn();
             entity.Property(e => e.IsDeleted).HasDefaultValue(false);
@@ -197,7 +199,7 @@ public partial class OutfitDBContext : DbContext
 
         modelBuilder.Entity<ProductGroup>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("product_group_pkey");
+            entity.HasKey(e => e.Id).HasName("pk_product_group");
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn();
             entity.Property(e => e.IsDeleted).HasDefaultValue(false);
@@ -211,7 +213,7 @@ public partial class OutfitDBContext : DbContext
 
         modelBuilder.Entity<Review>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("review_pkey");
+            entity.HasKey(e => e.Id).HasName("pk_review");
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn();
             entity.Property(e => e.IsDeleted).HasDefaultValue(false);
@@ -225,7 +227,7 @@ public partial class OutfitDBContext : DbContext
 
         modelBuilder.Entity<Role>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("role_pkey");
+            entity.HasKey(e => e.Id).HasName("pk_role");
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn();
             entity.Property(e => e.IsDeleted).HasDefaultValue(false);
@@ -233,7 +235,7 @@ public partial class OutfitDBContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("user_pkey");
+            entity.HasKey(e => e.Id).HasName("pk_user");
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn();
             entity.Property(e => e.IsDeleted).HasDefaultValue(false);
@@ -249,7 +251,7 @@ public partial class OutfitDBContext : DbContext
 
         modelBuilder.Entity<Wishlist>(entity =>
         {
-            entity.HasKey(e => e.Id).HasName("wishlist_pkey");
+            entity.HasKey(e => e.Id).HasName("pk_wishlist");
 
             entity.Property(e => e.Id).UseIdentityAlwaysColumn();
             entity.Property(e => e.IsDeleted).HasDefaultValue(false);
