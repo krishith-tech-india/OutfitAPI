@@ -11,8 +11,8 @@ namespace Data.Models;
 [Index("IsDeleted", Name = "idx_user_is_deleted")]
 [Index("PhNo", Name = "idx_user_ph_no")]
 [Index("RoleId", Name = "idx_user_role_id")]
-[Index("Email", Name = "user_email_key", IsUnique = true)]
-[Index("PhNo", Name = "user_ph_no_key", IsUnique = true)]
+[Index("Email", Name = "uk_user_email_key", IsUnique = true)]
+[Index("PhNo", Name = "uk_user_ph_no_key", IsUnique = true)]
 public partial class User
 {
     [Key]
@@ -47,7 +47,7 @@ public partial class User
     public DateTime? LastUpdatedOn { get; set; }
 
     [Column("is_deleted")]
-    public bool? IsDeleted { get; set; }
+    public bool IsDeleted { get; set; }
 
     [ForeignKey("AddedBy")]
     [InverseProperty("InverseAddedByNavigation")]

@@ -38,7 +38,7 @@ public partial class Cart
     public DateTime? LastUpdatedOn { get; set; }
 
     [Column("is_deleted")]
-    public bool? IsDeleted { get; set; }
+    public bool IsDeleted { get; set; }
 
     [ForeignKey("AddedBy")]
     [InverseProperty("CartAddedByNavigations")]

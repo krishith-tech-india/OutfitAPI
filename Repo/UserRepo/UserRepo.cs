@@ -13,8 +13,8 @@ public class UserRepo : BaseRepo<User>, IUserRepo
 
     public async Task<List<User>> GetAllUserAsync()
     {
-        List<User> users = await Select(x => !x.IsDeleted.Value).ToListAsync();
-        if(users.Count == 0)
+        List<User> users = await Select(x => !x.IsDeleted).ToListAsync();
+        if (users.Count == 0)
             throw new ApiException(System.Net.HttpStatusCode.NotFound, $"User Not exist");
         return users;
     }
@@ -22,7 +22,7 @@ public class UserRepo : BaseRepo<User>, IUserRepo
     public async Task<User> GetUserByIdAsync(int id)
     {
         var user = await GetByIdAsync(id);
-        if (user == null || user.IsDeleted.Value)
+        if (user == null || user.IsDeleted)
             throw new ApiException(System.Net.HttpStatusCode.NotFound, $"User id {id} not exist");
         return user;
     }
@@ -40,7 +40,7 @@ public class UserRepo : BaseRepo<User>, IUserRepo
     }
     public async Task<bool> ExistingUserPhonenoAndEmailUniqueOrNotAsync(string phoneNo, string email, int currentUserId)
     {
-        return await AnyAsync(x => !x.IsDeleted.Value && !x.Id.Equals(currentUserId) && (x.Email.Equals(email) || x.PhNo == phoneNo));
+        return await AnyAsync(x => !x.IsDeleted && !x.Id.Equals(currentUserId) && (x.Email.Equals(email) || x.PhNo == phoneNo));
     }
 
     public async Task InsertUserAsync(User user)
@@ -64,7 +64,7 @@ public class UserRepo : BaseRepo<User>, IUserRepo
 
     public async Task<bool> CheckUserExistUnderRoleIdAsync(int id)
     {
-        return await AnyAsync(x => x.RoleId.Equals(id) && !x.IsDeleted.Value);
+        return await AnyAsync(x => x.RoleId.Equals(id) && !x.IsDeleted);
     }
 
     //8.
@@ -75,6 +75,6 @@ public class UserRepo : BaseRepo<User>, IUserRepo
 
     public async Task<bool> CheckIsUserIdExistAsync(int userid)
     {
-        return await AnyAsync(x => x.Id.Equals(userid) && !x.IsDeleted.Value);
+        return await AnyAsync(x => x.Id.Equals(userid) && !x.IsDeleted);
     }
 }

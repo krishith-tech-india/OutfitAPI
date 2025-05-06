@@ -27,7 +27,7 @@ public class ImageTypeRepo : BaseRepo<ImageType>, IImageTypeRepo
 
     public async Task<List<ImageType>> GetAllImageTypeAsync()
     {
-        List<ImageType> imageTypes = await Select(x => !x.IsDeleted.Value).ToListAsync();
+        List<ImageType> imageTypes = await Select(x => !x.IsDeleted).ToListAsync();
         if (imageTypes.Count == 0)
             throw new ApiException(System.Net.HttpStatusCode.NotFound, $"Image Type Data Not exist");
         return imageTypes;
@@ -36,7 +36,7 @@ public class ImageTypeRepo : BaseRepo<ImageType>, IImageTypeRepo
     public async Task<ImageType> GetImageTypeByIdAsync(int id)
     {
         var imageTypes = await GetByIdAsync(id);
-        if (imageTypes == null || imageTypes.IsDeleted.Value)
+        if (imageTypes == null || imageTypes.IsDeleted)
             throw new ApiException(System.Net.HttpStatusCode.NotFound, $"Image Types id {id} not exist");
         return imageTypes;
     }
