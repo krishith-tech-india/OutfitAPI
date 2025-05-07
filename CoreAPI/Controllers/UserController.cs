@@ -31,6 +31,20 @@ namespace API.Controllers
             return new ApiResponse(HttpStatusCode.OK, await _userService.GetUserByIdAsync(id));
         }
 
+        [Authorize]
+        [HttpGet("/UserPhoneNoExist{phoneNo}")]
+        public async Task<ApiResponse> IsUserPhoneNoExist(string phoneNo)
+        {
+            return new ApiResponse(HttpStatusCode.OK, await _userService.CheckUserPhoneNoExistOrNotAsync(phoneNo));
+        }
+
+        [Authorize]
+        [HttpGet("/UserEmailExist{email}")]
+        public async Task<ApiResponse> IsUserEmailExist(string email)
+        {
+            return new ApiResponse(HttpStatusCode.OK, await _userService.CheckUserEmailExistOrNotAsync(email));
+        }
+
         [HttpPost]
         public async Task<ApiResponse> AddUser([FromBody] UserDto userDto)
         {
@@ -56,7 +70,6 @@ namespace API.Controllers
         [HttpPost("authenticate")]
         public async Task<ApiResponse> LoginUser([FromBody] AuthenticationDto authenticationDto)
         {
-            // 4.
             string Token = await _userService.AuthenticateUserAndGetToken(authenticationDto);
             return new ApiResponse(HttpStatusCode.OK,Token);
 

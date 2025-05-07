@@ -57,6 +57,16 @@ public class UserService : IUserService
         return userEntity.GenerateTokenAsync(_jwtConfig);
     }
 
+    public async Task<bool> CheckUserEmailExistOrNotAsync(string email)
+    {
+        return await _userRepo.CheckUserEmailExistOrNotAsync(email);
+    }
+
+    public async Task<bool> CheckUserPhoneNoExistOrNotAsync(string phoneNo)
+    {
+        return await _userRepo.CheckUserPhoneNoExistOrNotAsync(phoneNo);
+    }
+
     public async Task DeleteUserAsync(int id)
     {
         var user = await _userRepo.GetUserByIdAsync(id);

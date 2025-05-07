@@ -11,6 +11,7 @@ namespace Repo
             service.AddScoped<IUserRepo, UserRepo>();
             service.AddScoped<IAddressRepo, AddressRepo>();
             service.AddScoped<IImageTypeRepo, ImageTypeRepo>();
+            service.AddScoped<IOrderStatusRepo, OrderStatusRepo>();
         }
     }
 }

@@ -10,6 +10,7 @@ namespace Service
             service.AddScoped<IUserService, UserService>();
             service.AddScoped<IAddressService, AddressService>();
             service.AddScoped<IImageTypeService, ImageTypeService>();
+            service.AddScoped<IOrderStatusService, OrderStatusService>();
         }
     }
 }

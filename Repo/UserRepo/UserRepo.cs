@@ -24,20 +24,14 @@ public class UserRepo : BaseRepo<User>, IUserRepo
         return user;
     }
 
-    public async Task CheckDataValidOrnotAsync(User user)
+    public async Task<bool> CheckUserEmailExistOrNotAsync(string email)
     {
-        if (string.IsNullOrWhiteSpace(user.Name))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"User name is required");
-        if (string.IsNullOrWhiteSpace(user.Email))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"User Email is required");
-        if (string.IsNullOrWhiteSpace(user.PhNo))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"User phone no is required");
-        if (await ExistingUserPhonenoAndEmailUniqueOrNotAsync(user.PhNo, user.Email, user.Id))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"User email or phone no already registered");
+        return await AnyAsync(x => !x.IsDeleted && x.Email.Equals(email));
     }
-    public async Task<bool> ExistingUserPhonenoAndEmailUniqueOrNotAsync(string phoneNo, string email, int currentUserId)
+
+    public async Task<bool> CheckUserPhoneNoExistOrNotAsync(string phoneNo)
     {
-        return await AnyAsync(x => !x.IsDeleted && !x.Id.Equals(currentUserId) && (x.Email.Equals(email) || x.PhNo == phoneNo));
+        return await AnyAsync(x => !x.IsDeleted && x.PhNo == phoneNo);
     }
 
     public async Task InsertUserAsync(User user)
@@ -73,5 +67,20 @@ public class UserRepo : BaseRepo<User>, IUserRepo
     public async Task<bool> CheckIsUserIdExistAsync(int userid)
     {
         return await AnyAsync(x => x.Id.Equals(userid) && !x.IsDeleted);
+    }
+    private async Task CheckDataValidOrnotAsync(User user)
+    {
+        if (string.IsNullOrWhiteSpace(user.Name))
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"User name is required");
+        if (string.IsNullOrWhiteSpace(user.Email))
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"User Email is required");
+        if (string.IsNullOrWhiteSpace(user.PhNo))
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"User phone no is required");
+        if (await ExistingUserPhonenoAndEmailUniqueOrNotAsync(user.PhNo, user.Email, user.Id))
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"User email or phone no already registered");
+    }
+    private async Task<bool> ExistingUserPhonenoAndEmailUniqueOrNotAsync(string phoneNo, string email, int currentUserId)
+    {
+        return await AnyAsync(x => !x.IsDeleted && !x.Id.Equals(currentUserId) && (x.Email.Equals(email) || x.PhNo == phoneNo));
     }
 }

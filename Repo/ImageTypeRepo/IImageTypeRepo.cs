@@ -9,7 +9,6 @@ namespace Repo;
 
 public interface IImageTypeRepo : IBaseRepo<ImageType>
 {
-    void CheckDataValidOrnotAsync(ImageType imageType);
     Task<List<ImageType>> GetAllImageTypeAsync();
     Task<ImageType> GetImageTypeByIdAsync(int id);
     Task<bool> CheckIsImageTypeExistByNameAsync(string name);

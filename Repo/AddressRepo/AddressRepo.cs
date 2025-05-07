@@ -17,7 +17,7 @@ public class AddressRepo : BaseRepo<Address>, IAddressRepo
     {
     }
 
-    public void CheckDataValidOrnot(Address address)
+    private void CheckDataValidOrnot(Address address)
     {
         if (string.IsNullOrWhiteSpace(address.Line1))
             throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"Address Line 1 is required");
@@ -52,8 +52,6 @@ public class AddressRepo : BaseRepo<Address>, IAddressRepo
     public async Task<List<Address>> GetAddressByUserIdAsync(int userId)
     {
         List<Address> addresses = await Select(x => x.UserId.Equals(userId)).ToListAsync();
-        if (addresses.Count == 0)
-            throw new ApiException(System.Net.HttpStatusCode.NotFound, $"In {userId} UserId Address is Not exist");
         return addresses;
     }
 

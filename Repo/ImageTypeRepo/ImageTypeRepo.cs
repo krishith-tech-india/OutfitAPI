@@ -8,6 +8,7 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Repo;
 
@@ -16,12 +17,6 @@ public class ImageTypeRepo : BaseRepo<ImageType>, IImageTypeRepo
     public ImageTypeRepo(OutfitDBContext context) : base(context)
     {
 
-    }
-
-    public void CheckDataValidOrnotAsync(ImageType imageType)
-    {
-        if (string.IsNullOrWhiteSpace(imageType.Name))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"Image Type name is required");
     }
 
     public async Task<List<ImageType>> GetAllImageTypeAsync()
@@ -39,16 +34,22 @@ public class ImageTypeRepo : BaseRepo<ImageType>, IImageTypeRepo
 
     public async Task<bool> CheckIsImageTypeExistByNameAsync(string name)
     {
-        return await AnyAsync(x => x.Name.ToLower().Equals(name.ToLower()) && !x.IsDeleted); ;
+        return await AnyAsync(x =>  !x.IsDeleted && x.Name.ToLower().Equals(name.ToLower()));
+    }
+
+    private async Task CheckIsImageTypeDataValidOrNotAsync(ImageType imageType)
+    {
+        if (string.IsNullOrWhiteSpace(imageType.Name))
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"Image Type name is required");
+        if(await AnyAsync(x => !x.IsDeleted && !x.Id.Equals(imageType.Id) && x.Name.ToLower().Equals(imageType.Name.ToLower())))
+            throw new ApiException(System.Net.HttpStatusCode.Conflict, $"Image Type name {imageType.Name} aleady exist");
     }
 
     public async Task InsertImageTypeAsync(ImageType imageType)
     {
-        CheckDataValidOrnotAsync(imageType);
+        await CheckIsImageTypeDataValidOrNotAsync(imageType);
         if (string.IsNullOrWhiteSpace(imageType.Description))
             imageType.Description = null;
-        if (await CheckIsImageTypeExistByNameAsync(imageType.Name))
-            throw new ApiException(System.Net.HttpStatusCode.Conflict, $"Image Type name {imageType.Name} aleady exist");
         imageType.AddedOn = DateTime.Now;
         //imageType.AddedBy = 0;
         await InsertAsync(imageType);
@@ -57,11 +58,12 @@ public class ImageTypeRepo : BaseRepo<ImageType>, IImageTypeRepo
 
     public async Task UpdateImageTypeAsync(ImageType imageType)
     {
-        CheckDataValidOrnotAsync(imageType);
+        await CheckIsImageTypeDataValidOrNotAsync(imageType);
+        if (string.IsNullOrWhiteSpace(imageType.Description))
+            imageType.Description = null;
         imageType.LastUpdatedOn = DateTime.Now;
         //user.LastUpdatedBy = 0;
         Update(imageType);
         await SaveChangesAsync();
     }
-
 }
