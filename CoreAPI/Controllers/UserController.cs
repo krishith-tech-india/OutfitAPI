@@ -32,14 +32,14 @@ namespace API.Controllers
         }
 
         [Authorize]
-        [HttpGet("/UserPhoneNoExist{phoneNo}")]
+        [HttpGet("UserPhoneNoExist/{phoneNo}")]
         public async Task<ApiResponse> IsUserPhoneNoExist(string phoneNo)
         {
             return new ApiResponse(HttpStatusCode.OK, await _userService.CheckUserPhoneNoExistOrNotAsync(phoneNo));
         }
 
         [Authorize]
-        [HttpGet("/UserEmailExist{email}")]
+        [HttpGet("UserEmailExist/{email}")]
         public async Task<ApiResponse> IsUserEmailExist(string email)
         {
             return new ApiResponse(HttpStatusCode.OK, await _userService.CheckUserEmailExistOrNotAsync(email));
