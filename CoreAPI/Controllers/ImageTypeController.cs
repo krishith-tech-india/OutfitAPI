@@ -24,7 +24,7 @@ namespace API.Controllers
         [HttpGet]
         public async Task<ApiResponse> GetAllImageType()
         {
-            return new ApiResponse(HttpStatusCode.OK , await _imageTypeService.GetImageTypeAsync());
+            return new ApiResponse(HttpStatusCode.OK, await _imageTypeService.GetImageTypeAsync());
         }
 
         [Authorize]
@@ -35,7 +35,7 @@ namespace API.Controllers
         }
 
         [Authorize]
-        [HttpGet("/ImageTypeExistByName{Name}")]
+        [HttpGet("/ImageTypeExistByName/{Name}")]
         public async Task<ApiResponse> IsImageTypeExistByName(string Name)
         {
             return new ApiResponse(HttpStatusCode.OK, await _imageTypeService.IsImageTypeExistByNameAsync(Name));
@@ -59,7 +59,7 @@ namespace API.Controllers
 
         [Authorize]
         [HttpPut("{id}")]
-        public async Task<ApiResponse> UpdateImageType(int id,[FromBody]ImageTypeDto imageTypeDto)
+        public async Task<ApiResponse> UpdateImageType(int id, [FromBody] ImageTypeDto imageTypeDto)
         {
             await _imageTypeService.UpadateImageTypeAsync(id, imageTypeDto);
             return new ApiResponse(HttpStatusCode.OK);
