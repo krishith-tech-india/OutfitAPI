@@ -1,4 +1,5 @@
 ﻿using Core;
+using Core.Authentication;
 using Data.Contexts;
 using Data.Models;
 using Microsoft.EntityFrameworkCore;
@@ -7,8 +8,10 @@ namespace Repo;
 
 public class UserRepo : BaseRepo<User>, IUserRepo
 {
-    public UserRepo(OutfitDBContext context) : base(context)
+    private readonly IUserContext _userContext;
+    public UserRepo(OutfitDBContext context,IUserContext userContext) : base(context)
     {
+        _userContext = userContext;
     }
 
     public async Task<List<User>> GetAllUserAsync()
@@ -20,7 +23,7 @@ public class UserRepo : BaseRepo<User>, IUserRepo
     {
         var user = await GetByIdAsync(id);
         if (user == null || user.IsDeleted)
-            throw new ApiException(System.Net.HttpStatusCode.NotFound, $"User id {id} not exist");
+            throw new ApiException(System.Net.HttpStatusCode.NotFound,string.Format(Constants.NotExistExceptionMessage, "User", "Id", id));
         return user;
     }
 
@@ -38,7 +41,8 @@ public class UserRepo : BaseRepo<User>, IUserRepo
     {
         await CheckDataValidOrnotAsync(user);
         user.AddedOn = DateTime.Now;
-        //User.AddedBy = 0;
+        if (_userContext.loggedInUser.Id != 0)
+            user.AddedBy = _userContext.loggedInUser.Id;
         await InsertAsync(user);
         await SaveChangesAsync();
     }
@@ -48,7 +52,7 @@ public class UserRepo : BaseRepo<User>, IUserRepo
     {
         await CheckDataValidOrnotAsync(user);
         user.LastUpdatedOn = DateTime.Now;
-        //user.LastUpdatedBy = 0;
+        user.LastUpdatedBy = _userContext.loggedInUser.Id;
         Update(user);
         await SaveChangesAsync();
     }
@@ -71,13 +75,13 @@ public class UserRepo : BaseRepo<User>, IUserRepo
     private async Task CheckDataValidOrnotAsync(User user)
     {
         if (string.IsNullOrWhiteSpace(user.Name))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"User name is required");
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest,string.Format(Constants.FieldrequiredExceptionMessage,"User" , "Name"));
         if (string.IsNullOrWhiteSpace(user.Email))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"User Email is required");
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest,string.Format(Constants.FieldrequiredExceptionMessage, "User", "Email"));
         if (string.IsNullOrWhiteSpace(user.PhNo))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"User phone no is required");
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest,string.Format(Constants.FieldrequiredExceptionMessage, "User", "Phone No."));
         if (await ExistingUserPhonenoAndEmailUniqueOrNotAsync(user.PhNo, user.Email, user.Id))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"User email or phone no already registered");
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest,string.Format(Constants.AleadyExistExceptionMessage,"User", "Email OR Phone No.", ""));
     }
     private async Task<bool> ExistingUserPhonenoAndEmailUniqueOrNotAsync(string phoneNo, string email, int currentUserId)
     {

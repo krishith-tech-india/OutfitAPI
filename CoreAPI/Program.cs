@@ -96,7 +96,7 @@ builder.Services.AddAuthentication(options =>
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             context.Response.ContentType = "application/json";
 
-            var result = System.Text.Json.JsonSerializer.Serialize(new ApiException(System.Net.HttpStatusCode.Unauthorized, $"Token is missing or invalid."));
+            var result = System.Text.Json.JsonSerializer.Serialize(new ApiException(System.Net.HttpStatusCode.Unauthorized,string.Format(Constants.TokenMissingExceptionMessage)));
 
             return context.Response.WriteAsync(result);
         }

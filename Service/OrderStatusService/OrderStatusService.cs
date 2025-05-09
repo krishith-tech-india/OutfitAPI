@@ -26,17 +26,32 @@ public class OrderStatusService : IOrderStatusService
     public async Task<List<OrderStatusDto>> GetAllOrderStatusAsync()
     {
         var orderStatus = await _orderStatusRepo.GetAllOrderStatusAsync();
-        return orderStatus.Select(x => _orderStatusMapper.GetImageTypeDto(x)).ToList();
+        return orderStatus.Select(x => _orderStatusMapper.GetOrderStatusDto(x)).ToList();
     }
 
     public async Task<OrderStatusDto> GetOrderStatusByIDAsync(int id)
     {
-        return _orderStatusMapper.GetImageTypeDto(await _orderStatusRepo.GetOrderStatusByIdAsync(id));
+        return _orderStatusMapper.GetOrderStatusDto(await _orderStatusRepo.GetOrderStatusByIdAsync(id));
     }
 
     public async Task InsertOrderStatusAsync(OrderStatusDto orderStatusDto)
     {
         var OrderStatusEntity = _orderStatusMapper.GetEntity(orderStatusDto);
         await _orderStatusRepo.InsertOrderStatusAsync(OrderStatusEntity);
+    }
+
+    public async Task UpdateOrderStatusAsync(int id, OrderStatusDto orderStatusDto)
+    {
+        var OrderStatus = await _orderStatusRepo.GetOrderStatusByIdAsync(id);
+        OrderStatus.Name = orderStatusDto.Name;
+        OrderStatus.Description = orderStatusDto.Description;
+        await _orderStatusRepo.UpdateOrderStatusAsync(OrderStatus);
+    }
+
+    public async Task DeleteOrderStatusAsync(int id)
+    {
+        var OrderStatus = await _orderStatusRepo.GetOrderStatusByIdAsync(id);
+        OrderStatus.IsDeleted = true;
+        await _orderStatusRepo.UpdateOrderStatusAsync(OrderStatus);
     }
 }

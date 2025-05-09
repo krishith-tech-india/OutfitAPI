@@ -12,5 +12,5 @@ public interface IOrderStatusRepo : IBaseRepo<OrderStatus>
     Task<List<OrderStatus>> GetAllOrderStatusAsync();
     Task<OrderStatus> GetOrderStatusByIdAsync(int id);
     Task InsertOrderStatusAsync(OrderStatus orderStatus);
-    Task CheckIsImageTypeDataValidOrNotAsync(OrderStatus orderStatus);
+    Task UpdateOrderStatusAsync(OrderStatus orderStatus);
 }

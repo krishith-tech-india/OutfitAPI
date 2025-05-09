@@ -11,5 +11,5 @@ namespace Mapper;
 public interface IOrderStatusMapper
 {
     OrderStatus GetEntity(OrderStatusDto orderStatusDto);
-    OrderStatusDto GetImageTypeDto(OrderStatus orderStatus);
+    OrderStatusDto GetOrderStatusDto(OrderStatus orderStatus);
 }

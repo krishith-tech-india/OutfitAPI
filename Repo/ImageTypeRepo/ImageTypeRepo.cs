@@ -1,4 +1,5 @@
 ﻿using Core;
+using Core.Authentication;
 using Data.Contexts;
 using Data.Models;
 using Microsoft.EntityFrameworkCore;
@@ -14,9 +15,10 @@ namespace Repo;
 
 public class ImageTypeRepo : BaseRepo<ImageType>, IImageTypeRepo
 {
-    public ImageTypeRepo(OutfitDBContext context) : base(context)
+    private readonly IUserContext _userContext;
+    public ImageTypeRepo(OutfitDBContext context, IUserContext userContext) : base(context)
     {
-
+        _userContext = userContext;
     }
 
     public async Task<List<ImageType>> GetAllImageTypeAsync()
@@ -28,7 +30,7 @@ public class ImageTypeRepo : BaseRepo<ImageType>, IImageTypeRepo
     {
         var imageTypes = await GetByIdAsync(id);
         if (imageTypes == null || imageTypes.IsDeleted)
-            throw new ApiException(System.Net.HttpStatusCode.NotFound, $"Image Types id {id} not exist");
+            throw new ApiException(System.Net.HttpStatusCode.NotFound, string.Format(Constants.NotExistExceptionMessage, "Image Types", "id" ,id));
         return imageTypes;
     }
 
@@ -40,9 +42,9 @@ public class ImageTypeRepo : BaseRepo<ImageType>, IImageTypeRepo
     private async Task CheckIsImageTypeDataValidOrNotAsync(ImageType imageType)
     {
         if (string.IsNullOrWhiteSpace(imageType.Name))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"Image Type name is required");
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Image Type", "Name"));
         if(await AnyAsync(x => !x.IsDeleted && !x.Id.Equals(imageType.Id) && x.Name.ToLower().Equals(imageType.Name.ToLower())))
-            throw new ApiException(System.Net.HttpStatusCode.Conflict, $"Image Type name {imageType.Name} aleady exist");
+            throw new ApiException(System.Net.HttpStatusCode.Conflict,string.Format(Constants.AleadyExistExceptionMessage, "Image Type" , "Name" , imageType.Name));
     }
 
     public async Task InsertImageTypeAsync(ImageType imageType)
@@ -51,7 +53,7 @@ public class ImageTypeRepo : BaseRepo<ImageType>, IImageTypeRepo
         if (string.IsNullOrWhiteSpace(imageType.Description))
             imageType.Description = null;
         imageType.AddedOn = DateTime.Now;
-        //imageType.AddedBy = 0;
+        imageType.AddedBy = _userContext.loggedInUser.Id;
         await InsertAsync(imageType);
         await SaveChangesAsync();
     }
@@ -62,7 +64,7 @@ public class ImageTypeRepo : BaseRepo<ImageType>, IImageTypeRepo
         if (string.IsNullOrWhiteSpace(imageType.Description))
             imageType.Description = null;
         imageType.LastUpdatedOn = DateTime.Now;
-        //user.LastUpdatedBy = 0;
+        imageType.LastUpdatedBy = _userContext.loggedInUser.Id;
         Update(imageType);
         await SaveChangesAsync();
     }

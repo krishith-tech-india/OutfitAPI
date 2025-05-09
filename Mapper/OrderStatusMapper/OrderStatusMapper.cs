@@ -19,7 +19,7 @@ public class OrderStatusMapper : IOrderStatusMapper
         };
     }
 
-    public OrderStatusDto GetImageTypeDto(OrderStatus orderStatus)
+    public OrderStatusDto GetOrderStatusDto(OrderStatus orderStatus)
     {
         return new OrderStatusDto
         {

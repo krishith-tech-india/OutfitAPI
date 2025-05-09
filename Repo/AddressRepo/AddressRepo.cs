@@ -1,4 +1,5 @@
 ﻿using Core;
+using Core.Authentication;
 using Data.Contexts;
 using Data.Models;
 using Microsoft.EntityFrameworkCore;
@@ -13,22 +14,25 @@ namespace Repo;
 
 public class AddressRepo : BaseRepo<Address>, IAddressRepo
 {
-    public AddressRepo(OutfitDBContext context) : base(context)
+    private readonly IUserContext _userContext;
+
+    public AddressRepo(OutfitDBContext context, IUserContext userContext) : base(context)
     {
+        _userContext = userContext;
     }
 
     private void CheckDataValidOrnot(Address address)
     {
         if (string.IsNullOrWhiteSpace(address.Line1))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"Address Line 1 is required");
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage,"Address", "Line 1"));
         if (string.IsNullOrWhiteSpace(address.City))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"City is required");
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Address", "City"));
         if (string.IsNullOrWhiteSpace(address.State))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"State is required");
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Address", "State"));
         if (string.IsNullOrWhiteSpace(address.Country))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"Country is required");
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Address", "Country"));
         if (string.IsNullOrWhiteSpace(address.Pincode))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"Pincode is required");
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Address", "Pincode"));
         if (string.IsNullOrWhiteSpace(address.Name))
             address.Name = null;
         if (string.IsNullOrWhiteSpace(address.Line2))
@@ -45,7 +49,7 @@ public class AddressRepo : BaseRepo<Address>, IAddressRepo
     {
         var address = await GetByIdAsync(id);
         if (address == null)
-            throw new ApiException(System.Net.HttpStatusCode.NotFound, $"Address id {id} not exist");
+            throw new ApiException(System.Net.HttpStatusCode.NotFound, string.Format(Constants.NotExistExceptionMessage, "Address", "id", id));
         return address;
     }
 
@@ -59,7 +63,7 @@ public class AddressRepo : BaseRepo<Address>, IAddressRepo
     {
         CheckDataValidOrnot(address);
         address.AddedOn = DateTime.Now;
-        //address.AddedBy = 0;
+        address.AddedBy = _userContext.loggedInUser.Id;
         await InsertAsync(address);
         await SaveChangesAsync();
     }

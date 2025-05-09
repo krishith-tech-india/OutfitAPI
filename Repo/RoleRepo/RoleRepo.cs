@@ -1,4 +1,5 @@
 using Core;
+using Core.Authentication;
 using Data.Contexts;
 using Data.Models;
 using Microsoft.EntityFrameworkCore;
@@ -7,9 +8,11 @@ namespace Repo;
 
 public class RoleRepo : BaseRepo<Role>, IRoleRepo
 {
-    public RoleRepo(OutfitDBContext context) : base(context)
-    {
+    private readonly IUserContext _userContext;
 
+    public RoleRepo(OutfitDBContext context,IUserContext userContext) : base(context)
+    {
+        _userContext = userContext;
     }
     public async Task<List<Role>> GetAllRolesAsync()
     {
@@ -20,7 +23,7 @@ public class RoleRepo : BaseRepo<Role>, IRoleRepo
     {
         var role = await GetByIdAsync(id);
         if (role == null || role.IsDeleted)
-            throw new ApiException(System.Net.HttpStatusCode.NotFound, $"Role id {id} not exist");
+            throw new ApiException(System.Net.HttpStatusCode.NotFound,string.Format(Constants.NotExistExceptionMessage,"Role" , "Id" , id));
         return role;
     }
 
@@ -32,11 +35,11 @@ public class RoleRepo : BaseRepo<Role>, IRoleRepo
     public async Task InsertRoleAsync(Role role)
     {
         if (string.IsNullOrWhiteSpace(role.RoleName))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"Role name is required");
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest,string.Format(Constants.FieldrequiredExceptionMessage,"Role","Name"));
         if (await CheckIsRoleExistByNameAsync(role.RoleName))
-            throw new ApiException(System.Net.HttpStatusCode.Conflict, $"Role with name {role.RoleName} aleady exist");
+            throw new ApiException(System.Net.HttpStatusCode.Conflict,string.Format(Constants.AleadyExistExceptionMessage, "Role", "Name", role.RoleName));
         role.AddedOn = DateTime.Now;
-        //role.AddedBy = 0
+        role.AddedBy = _userContext.loggedInUser.Id;
         await InsertAsync(role);
         await SaveChangesAsync();
     }
@@ -49,9 +52,9 @@ public class RoleRepo : BaseRepo<Role>, IRoleRepo
     public async Task UpdateRoleAsync(Role role)
     {
         if (string.IsNullOrWhiteSpace(role.RoleName))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"Role name is required");
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Role", "Name"));
         role.LastUpdatedOn = DateTime.Now;
-        //role.LastUpdatedBy = 0;
+        role.LastUpdatedBy = _userContext.loggedInUser.Id;
         Update(role);
         await SaveChangesAsync();
     }
