@@ -36,7 +36,7 @@ public class AddressService : IAddressService
     public async Task<List<AddressDto>> GetAddressByUserIdAsync(int UserId)
     {
         if (!await _userRepo.CheckIsUserIdExistAsync(UserId))
-            throw new ApiException(System.Net.HttpStatusCode.NotFound, $"User Id {UserId} is not exist");
+            throw new ApiException(System.Net.HttpStatusCode.NotFound,string.Format(Constants.NotExistExceptionMessage, "User","Id",UserId));
         var Address = await _addressRepo.GetAddressByUserIdAsync(UserId);
         return Address.Select(x => _addressMapper.GetAddressDto(x)).ToList();
     }
@@ -44,7 +44,7 @@ public class AddressService : IAddressService
     public async Task AddAddressAsync(AddressDto addressDto)
     {
         if (!await _userRepo.CheckIsUserIdExistAsync(addressDto.UserId))
-            throw new ApiException(System.Net.HttpStatusCode.NotFound, $"User Id {addressDto.UserId} is not exist");
+            throw new ApiException(System.Net.HttpStatusCode.NotFound, string.Format(Constants.NotExistExceptionMessage, "User", "Id", addressDto.UserId));
         var addressEntity = _addressMapper.GetEntity(addressDto);
         await _addressRepo.InsertUserAsync(addressEntity);
     }

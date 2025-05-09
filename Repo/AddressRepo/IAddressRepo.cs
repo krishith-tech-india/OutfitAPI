@@ -9,7 +9,6 @@ namespace Repo;
 
 public interface IAddressRepo : IBaseRepo<Address>
 {
-    void CheckDataValidOrnot(Address address);
     Task<List<Address>> GetAddressByUserIdAsync(int UserId);
     Task<Address> GetAddressByIdAsync(int id);
     Task InsertUserAsync(Address address);

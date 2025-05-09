@@ -10,11 +10,12 @@ namespace Service;
 
 public interface IUserService
 {
+    Task<bool> CheckUserEmailExistOrNotAsync(string email);
+    Task<bool> CheckUserPhoneNoExistOrNotAsync(string phoneNo);
     Task<List<UserDto>> GetUsersAsync();
     Task<UserDto> GetUserByIdAsync(int id);
     Task<string> AddUserAsync(UserDto userDto);
     Task DeleteUserAsync(int id);
     Task UpadateUserAsync(int id, UserDto userDto);
-    //5.
     Task<string> AuthenticateUserAndGetToken(AuthenticationDto authDto);
 }

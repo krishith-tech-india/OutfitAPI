@@ -57,6 +57,16 @@ public class UserService : IUserService
         return userEntity.GenerateTokenAsync(_jwtConfig);
     }
 
+    public async Task<bool> CheckUserEmailExistOrNotAsync(string email)
+    {
+        return await _userRepo.CheckUserEmailExistOrNotAsync(email);
+    }
+
+    public async Task<bool> CheckUserPhoneNoExistOrNotAsync(string phoneNo)
+    {
+        return await _userRepo.CheckUserPhoneNoExistOrNotAsync(phoneNo);
+    }
+
     public async Task DeleteUserAsync(int id)
     {
         var user = await _userRepo.GetUserByIdAsync(id);
@@ -66,7 +76,7 @@ public class UserService : IUserService
     public async Task UpadateUserAsync(int id, UserDto userDto)
     {
         if (!await _roleRepo.CheckIsRoleIdExistAsync(userDto.RoleId))
-            throw new ApiException(HttpStatusCode.NotFound, $"Role Id {userDto.RoleId} is not exist");
+            throw new ApiException(HttpStatusCode.NotFound, string.Format(Constants.NotExistExceptionMessage,"Role", "Id" , userDto.RoleId));
         var user = await _userRepo.GetUserByIdAsync(id);
         user.RoleId = userDto.RoleId;
         user.Email = userDto.Email;
@@ -77,10 +87,13 @@ public class UserService : IUserService
 
     public async Task<string> AuthenticateUserAndGetToken(AuthenticationDto authDto)
     {
-        // 6.
+        if (string.IsNullOrWhiteSpace(authDto.EmailOrPhone))
+            throw new ApiException(HttpStatusCode.BadRequest,string.Format(Constants.FieldrequiredExceptionMessage,"User", "Email Or Phone"));
+        if(string.IsNullOrWhiteSpace(authDto.Password))
+            throw new ApiException(HttpStatusCode.BadRequest,string.Format(Constants.FieldrequiredExceptionMessage,"User", "Passsword"));
         var user = await _userRepo.GetUserByEmailOrPhone(authDto.EmailOrPhone, authDto.Password);
         if (user == null)
-            throw new ApiException(HttpStatusCode.NotFound, "User Not found");
+            throw new ApiException(HttpStatusCode.NotFound,string.Format(Constants.UnauthorizedExceptionMessage));
         return user.GenerateTokenAsync(_jwtConfig);
     }
 }

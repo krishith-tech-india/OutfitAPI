@@ -10,6 +10,7 @@ namespace Mapper
             service.AddScoped<IUserMapper, UserMapper>();
             service.AddScoped<IAddressMapper, AddressMapper>();
             service.AddScoped<IImageTypeMapper, ImageTypeMapper>();
+            service.AddScoped<IOrderStatusMapper, OrderStatusMapper>();
         }
     }
 }

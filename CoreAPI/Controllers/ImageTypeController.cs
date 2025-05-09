@@ -35,8 +35,15 @@ namespace API.Controllers
         }
 
         [Authorize]
+        [HttpGet("/ImageTypeExistByName{Name}")]
+        public async Task<ApiResponse> IsImageTypeExistByName(string Name)
+        {
+            return new ApiResponse(HttpStatusCode.OK, await _imageTypeService.IsImageTypeExistByNameAsync(Name));
+        }
+
+        [Authorize]
         [HttpPost]
-        public async Task<ApiResponse> AddImageType(ImageTypeDto imageTypeDto)
+        public async Task<ApiResponse> AddImageType([FromBody] ImageTypeDto imageTypeDto)
         {
             await _imageTypeService.AddImageType(imageTypeDto);
             return new ApiResponse(HttpStatusCode.OK);
@@ -52,7 +59,7 @@ namespace API.Controllers
 
         [Authorize]
         [HttpPut("{id}")]
-        public async Task<ApiResponse> UpdateImageType(int id,ImageTypeDto imageTypeDto)
+        public async Task<ApiResponse> UpdateImageType(int id,[FromBody]ImageTypeDto imageTypeDto)
         {
             await _imageTypeService.UpadateImageTypeAsync(id, imageTypeDto);
             return new ApiResponse(HttpStatusCode.OK);

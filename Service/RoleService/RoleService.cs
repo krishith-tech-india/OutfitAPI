@@ -41,7 +41,7 @@ public class RoleService : IRoleService
     public async Task DeleteRoleAsync(int id)
     {
         if (await _userRepo.CheckUserExistUnderRoleIdAsync(id))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, $"User Id available In {id} Role Id.");
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest,string.Format(Constants.DependentFindExceptionMessage, "Role Id"));
         var role = await _roleRepo.GetRoleByIdAsync(id);
         role.IsDeleted = true;
         await _roleRepo.UpdateRoleAsync(role);

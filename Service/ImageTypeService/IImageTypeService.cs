@@ -12,6 +12,7 @@ public interface IImageTypeService
 {
     Task<List<ImageTypeDto>> GetImageTypeAsync();
     Task<ImageTypeDto> GetImageTypeByIdAsync(int id);
+    Task<bool> IsImageTypeExistByNameAsync(string name);
     Task AddImageType(ImageTypeDto imageTypeDto);
     Task UpadateImageTypeAsync(int id, ImageTypeDto imageTypeDto);
     Task DeleteImageTypeAsync(int id);
