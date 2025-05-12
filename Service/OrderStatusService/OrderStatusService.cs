@@ -23,9 +23,9 @@ public class OrderStatusService : IOrderStatusService
         _orderStatusMapper = orderStatusMapper;
     }
 
-    public async Task<List<OrderStatusDto>> GetAllOrderStatusAsync()
+    public async Task<List<OrderStatusDto>> GetAllOrderStatusAsync(PaginationDto paginationDto)
     {
-        var orderStatus = await _orderStatusRepo.GetAllOrderStatusAsync();
+        var orderStatus = await _orderStatusRepo.GetAllOrderStatusAsync(paginationDto);
         return orderStatus.Select(x => _orderStatusMapper.GetOrderStatusDto(x)).ToList();
     }
 

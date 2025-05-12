@@ -2,6 +2,7 @@
 using Core.Authentication;
 using Data.Contexts;
 using Data.Models;
+using Dto;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -53,9 +54,9 @@ public class AddressRepo : BaseRepo<Address>, IAddressRepo
         return address;
     }
 
-    public async Task<List<Address>> GetAddressByUserIdAsync(int userId)
+    public async Task<List<Address>> GetAddressByUserIdAsync(int userId,PaginationDto paginationDto)
     {
-        List<Address> addresses = await Select(x => x.UserId.Equals(userId)).ToListAsync();
+        List<Address> addresses = await Select(x => x.UserId.Equals(userId)).OrderBy(x => x.Id).Skip((paginationDto.PageNo - 1) * paginationDto.PageSize).Take(paginationDto.PageSize).ToListAsync();
         return addresses;
     }
 

@@ -1,4 +1,5 @@
 ﻿using Data.Models;
+using Dto;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ namespace Repo;
 
 public interface IAddressRepo : IBaseRepo<Address>
 {
-    Task<List<Address>> GetAddressByUserIdAsync(int UserId);
+    Task<List<Address>> GetAddressByUserIdAsync(int UserId,PaginationDto paginationDto);
     Task<Address> GetAddressByIdAsync(int id);
     Task InsertUserAsync(Address address);
 }

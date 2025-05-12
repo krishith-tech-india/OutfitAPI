@@ -21,10 +21,10 @@ namespace API.Controllers
         }
 
         [Authorize]
-        [HttpGet]
-        public async Task<ApiResponse> GetAllImageType()
+        [HttpPost("GetAllImageType/")]
+        public async Task<ApiResponse> GetAllImageType(PaginationDto paginationDto)
         {
-            return new ApiResponse(HttpStatusCode.OK, await _imageTypeService.GetImageTypeAsync());
+            return new ApiResponse(HttpStatusCode.OK, await _imageTypeService.GetImageTypeAsync(paginationDto));
         }
 
         [Authorize]
@@ -35,17 +35,18 @@ namespace API.Controllers
         }
 
         [Authorize]
-        [HttpGet("ImageTypeExistByName/{Name}")]
-        public async Task<ApiResponse> IsImageTypeExistByName(string Name)
-        {
-            return new ApiResponse(HttpStatusCode.OK, await _imageTypeService.IsImageTypeExistByNameAsync(Name));
-        }
-
-        [Authorize]
         [HttpPost]
         public async Task<ApiResponse> AddImageType([FromBody] ImageTypeDto imageTypeDto)
         {
             await _imageTypeService.AddImageType(imageTypeDto);
+            return new ApiResponse(HttpStatusCode.OK);
+        }
+
+        [Authorize]
+        [HttpPut("{id}")]
+        public async Task<ApiResponse> UpdateImageType(int id, [FromBody] ImageTypeDto imageTypeDto)
+        {
+            await _imageTypeService.UpadateImageTypeAsync(id, imageTypeDto);
             return new ApiResponse(HttpStatusCode.OK);
         }
 
@@ -58,12 +59,10 @@ namespace API.Controllers
         }
 
         [Authorize]
-        [HttpPut("{id}")]
-        public async Task<ApiResponse> UpdateImageType(int id, [FromBody] ImageTypeDto imageTypeDto)
+        [HttpGet("ImageTypeExistByName/{Name}")]
+        public async Task<ApiResponse> IsImageTypeExistByName(string Name)
         {
-            await _imageTypeService.UpadateImageTypeAsync(id, imageTypeDto);
-            return new ApiResponse(HttpStatusCode.OK);
+            return new ApiResponse(HttpStatusCode.OK, await _imageTypeService.IsImageTypeExistByNameAsync(Name));
         }
-
     }
 }

@@ -1,11 +1,12 @@
 
 using Data.Models;
+using Dto;
 
 namespace Repo;
 
 public interface IRoleRepo : IBaseRepo<Role>
 {
-    Task<List<Role>> GetAllRolesAsync();
+    Task<List<Role>> GetAllRolesAsync(PaginationDto paginationDto);
     Task<Role> GetRoleByIdAsync(int id);
     Task<bool> CheckIsRoleExistByNameAsync(string name);
     Task InsertRoleAsync(Role role);

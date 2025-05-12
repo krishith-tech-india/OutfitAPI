@@ -21,10 +21,10 @@ namespace API.Controllers
         }
 
         [Authorize]
-        [HttpGet]
-        public async Task<ApiResponse> GetRole()
+        [HttpPost("GetAllRole")]
+        public async Task<ApiResponse> GetRole(PaginationDto paginationDto)
         {
-            return new ApiResponse(HttpStatusCode.OK, await _roleService.GetRolesAsync());
+            return new ApiResponse(HttpStatusCode.OK, await _roleService.GetRolesAsync(paginationDto));
         }
 
         [Authorize]
@@ -43,18 +43,18 @@ namespace API.Controllers
         }
 
         [Authorize]
-        [HttpDelete("{id}")]
-        public async Task<ApiResponse> DeleteRole(int id)
-        {
-            await _roleService.DeleteRoleAsync(id);
-            return new ApiResponse(HttpStatusCode.OK);
-        }
-
-        [Authorize]
         [HttpPut("{id}")]
         public async Task<ApiResponse> UpadateRole(int id,RoleDto roleDto)
         {
             await _roleService.UpadateRoleAsync(id,roleDto);
+            return new ApiResponse(HttpStatusCode.OK);
+        }
+
+        [Authorize]
+        [HttpDelete("{id}")]
+        public async Task<ApiResponse> DeleteRole(int id)
+        {
+            await _roleService.DeleteRoleAsync(id);
             return new ApiResponse(HttpStatusCode.OK);
         }
     }

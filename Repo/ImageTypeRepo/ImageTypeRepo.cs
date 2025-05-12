@@ -2,6 +2,7 @@
 using Core.Authentication;
 using Data.Contexts;
 using Data.Models;
+using Dto;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -21,9 +22,9 @@ public class ImageTypeRepo : BaseRepo<ImageType>, IImageTypeRepo
         _userContext = userContext;
     }
 
-    public async Task<List<ImageType>> GetAllImageTypeAsync()
+    public async Task<List<ImageType>> GetAllImageTypeAsync(PaginationDto paginationDto)
     {
-        return await Select(x => !x.IsDeleted).ToListAsync();
+        return await Select(x => !x.IsDeleted).OrderBy(x => x.Id).Skip((paginationDto.PageNo - 1) * paginationDto.PageSize).Take(paginationDto.PageSize).ToListAsync();
     }
 
     public async Task<ImageType> GetImageTypeByIdAsync(int id)

@@ -26,10 +26,10 @@ namespace API.Controllers
         }
 
         [Authorize]
-        [HttpGet("UserId/{userId}")]
-        public async Task<ApiResponse> GetAddressByUserId(int userId)
+        [HttpPost("UserId/{userId}")]
+        public async Task<ApiResponse> GetAddressByUserId([FromRoute]int userId,[FromBody]PaginationDto paginationDto)
         {
-            return new ApiResponse(HttpStatusCode.OK , await _addressService.GetAddressByUserIdAsync(userId));
+            return new ApiResponse(HttpStatusCode.OK , await _addressService.GetAddressByUserIdAsync(userId, paginationDto));
         }
 
         [Authorize]

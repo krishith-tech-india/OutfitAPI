@@ -19,10 +19,10 @@ namespace API.Controllers
         }
 
         [Authorize]
-        [HttpGet]
-        public async Task<ApiResponse> GetAllOrderStatus()
+        [HttpPost("GetAll")]
+        public async Task<ApiResponse> GetAllOrderStatus([FromBody] PaginationDto paginationDto)
         {
-            return new ApiResponse(HttpStatusCode.OK, await _orderStatusService.GetAllOrderStatusAsync());
+            return new ApiResponse(HttpStatusCode.OK, await _orderStatusService.GetAllOrderStatusAsync(paginationDto));
         }
 
         [Authorize]
@@ -41,6 +41,14 @@ namespace API.Controllers
         }
 
         [Authorize]
+        [HttpPut("{Id}")]
+        public async Task<ApiResponse> UpdateOrderStatus(int Id,[FromBody] OrderStatusDto orderStatusDto)
+        {
+            await _orderStatusService.UpdateOrderStatusAsync(Id, orderStatusDto);
+            return new ApiResponse(HttpStatusCode.OK);
+        }
+
+        [Authorize]
         [HttpDelete("{Id}")]
         public async Task<ApiResponse> DeleteOrderStatus(int Id)
         {
@@ -48,12 +56,5 @@ namespace API.Controllers
             return new ApiResponse(HttpStatusCode.OK);
         }
 
-        [Authorize]
-        [HttpPut("{Id}")]
-        public async Task<ApiResponse> UpdateOrderStatus(int Id,[FromBody] OrderStatusDto orderStatusDto)
-        {
-            await _orderStatusService.UpdateOrderStatusAsync(Id, orderStatusDto);
-            return new ApiResponse(HttpStatusCode.OK);
-        }
     }
 }

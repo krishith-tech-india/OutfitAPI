@@ -2,6 +2,7 @@
 using Core.Authentication;
 using Data.Contexts;
 using Data.Models;
+using Dto;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -20,9 +21,9 @@ public class OrderStatusRepo : BaseRepo<OrderStatus>, IOrderStatusRepo
         _userContext = userContext;
     }
 
-    public async Task<List<OrderStatus>> GetAllOrderStatusAsync()
+    public async Task<List<OrderStatus>> GetAllOrderStatusAsync(PaginationDto paginationDto)
     {
-        return await Select(x => !x.IsDeleted).ToListAsync();
+        return await Select(x => !x.IsDeleted).OrderBy(x => x.Id).Skip((paginationDto.PageNo - 1) * paginationDto.PageSize).Take(paginationDto.PageSize).ToListAsync();
     }
 
     public async Task<OrderStatus> GetOrderStatusByIdAsync(int id)
@@ -31,14 +32,6 @@ public class OrderStatusRepo : BaseRepo<OrderStatus>, IOrderStatusRepo
         if (orderStatus == null || orderStatus.IsDeleted)
             throw new ApiException(System.Net.HttpStatusCode.NotFound, string.Format(Constants.NotExistExceptionMessage, "Order Status", "Id", id));
         return orderStatus;
-    }
-
-    private async Task CheckIsOrderStatusDataValidOrNotAsync(OrderStatus orderStatus)
-    {
-        if (string.IsNullOrWhiteSpace(orderStatus.Name))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest,string.Format(Constants.FieldrequiredExceptionMessage, "Order Status", "Name"));
-        if (await AnyAsync(x => !x.IsDeleted && !x.Id.Equals(orderStatus.Id) && x.Name.ToLower().Equals(orderStatus.Name.ToLower())))
-            throw new ApiException(System.Net.HttpStatusCode.Conflict,string.Format(Constants.AleadyExistExceptionMessage, "Order Status", "Name" , orderStatus.Name));
     }
 
     public async Task InsertOrderStatusAsync(OrderStatus orderStatus)
@@ -61,5 +54,12 @@ public class OrderStatusRepo : BaseRepo<OrderStatus>, IOrderStatusRepo
         orderStatus.LastUpdatedBy = _userContext.loggedInUser.Id;
         Update(orderStatus);
         await SaveChangesAsync();
+    }
+    private async Task CheckIsOrderStatusDataValidOrNotAsync(OrderStatus orderStatus)
+    {
+        if (string.IsNullOrWhiteSpace(orderStatus.Name))
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest,string.Format(Constants.FieldrequiredExceptionMessage, "Order Status", "Name"));
+        if (await AnyAsync(x => !x.IsDeleted && !x.Id.Equals(orderStatus.Id) && x.Name.ToLower().Equals(orderStatus.Name.ToLower())))
+            throw new ApiException(System.Net.HttpStatusCode.Conflict,string.Format(Constants.AleadyExistExceptionMessage, "Order Status", "Name" , orderStatus.Name));
     }
 }

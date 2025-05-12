@@ -23,9 +23,9 @@ public class ImageTypeService : IImageTypeService
         _imageTypeMapper = imageTypeMapper;
     }
 
-    public async Task<List<ImageTypeDto>> GetImageTypeAsync()
+    public async Task<List<ImageTypeDto>> GetImageTypeAsync(PaginationDto paginationDto)
     {
-        var imageType = await _imageTypeRepo.GetAllImageTypeAsync();
+        var imageType = await _imageTypeRepo.GetAllImageTypeAsync(paginationDto);
         return imageType.Select(x => _imageTypeMapper.GetImageTypeDto(x)).ToList();
     }
 

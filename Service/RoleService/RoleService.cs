@@ -24,9 +24,9 @@ public class RoleService : IRoleService
         _roleMapper = roleMapper;
         _userRepo = userRepo;
     }
-    public async Task<List<RoleDto>> GetRolesAsync()
+    public async Task<List<RoleDto>> GetRolesAsync(PaginationDto paginationDto)
     {
-        var roles = await _roleRepo.GetAllRolesAsync();
+        var roles = await _roleRepo.GetAllRolesAsync(paginationDto);
         return roles.Select(x => _roleMapper.GetRoleDto(x)).ToList();
     }
     public async Task<RoleDto> GetRoleByIdAsync(int id)

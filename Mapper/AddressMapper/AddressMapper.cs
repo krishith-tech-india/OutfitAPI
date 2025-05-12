@@ -15,7 +15,7 @@ public class AddressMapper : IAddressMapper
         return new Address
         {
             UserId = addressDto.UserId,
-            Name = addressDto.Name,
+            Name = addressDto.AddressName,
             Line1 = addressDto.Line1,
             Line2 = addressDto.Line2,
             Landmark = addressDto.Landmark,
@@ -33,7 +33,7 @@ public class AddressMapper : IAddressMapper
         {
             Id = address.Id,
             UserId = address.UserId.Value,
-            Name = address.Name,
+            AddressName = address.Name,
             Line1 = address.Line1,
             Line2 = address.Line2,
             Landmark = address.Landmark,

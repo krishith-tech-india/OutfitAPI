@@ -33,11 +33,11 @@ public class AddressService : IAddressService
         return _addressMapper.GetAddressDto(await _addressRepo.GetAddressByIdAsync(id));
     }
 
-    public async Task<List<AddressDto>> GetAddressByUserIdAsync(int UserId)
+    public async Task<List<AddressDto>> GetAddressByUserIdAsync(int UserId, PaginationDto paginationDto)
     {
         if (!await _userRepo.CheckIsUserIdExistAsync(UserId))
             throw new ApiException(System.Net.HttpStatusCode.NotFound,string.Format(Constants.NotExistExceptionMessage, "User","Id",UserId));
-        var Address = await _addressRepo.GetAddressByUserIdAsync(UserId);
+        var Address = await _addressRepo.GetAddressByUserIdAsync(UserId,paginationDto);
         return Address.Select(x => _addressMapper.GetAddressDto(x)).ToList();
     }
 

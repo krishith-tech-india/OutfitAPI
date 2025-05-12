@@ -2,6 +2,7 @@
 using Core.Authentication;
 using Data.Contexts;
 using Data.Models;
+using Dto;
 using Microsoft.EntityFrameworkCore;
 
 namespace Repo;
@@ -14,9 +15,9 @@ public class UserRepo : BaseRepo<User>, IUserRepo
         _userContext = userContext;
     }
 
-    public async Task<List<User>> GetAllUserAsync()
+    public async Task<List<User>> GetAllUserAsync(PaginationDto paginationDto)
     {
-        return await Select(x => !x.IsDeleted).ToListAsync();
+        return await Select(x => !x.IsDeleted).OrderBy(x => x.Id).Skip((paginationDto.PageNo - 1) * paginationDto.PageSize).Take(paginationDto.PageSize).ToListAsync();
     }
 
     public async Task<User> GetUserByIdAsync(int id)

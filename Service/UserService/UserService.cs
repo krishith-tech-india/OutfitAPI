@@ -38,9 +38,9 @@ public class UserService : IUserService
         _jwtConfig = jwtConfig.Value;
     }
 
-    public async Task<List<UserDto>> GetUsersAsync()
+    public async Task<List<UserDto>> GetUsersAsync(PaginationDto paginationDto)
     {
-        var users = await _userRepo.GetAllUserAsync();
+        var users = await _userRepo.GetAllUserAsync(paginationDto);
         return users.Select(x => _userMapper.GetUserDto(x)).ToList();
     }
 
