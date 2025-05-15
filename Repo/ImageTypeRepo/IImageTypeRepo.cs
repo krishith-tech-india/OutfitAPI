@@ -10,7 +10,7 @@ namespace Repo;
 
 public interface IImageTypeRepo : IBaseRepo<ImageType>
 {
-    Task<List<ImageType>> GetAllImageTypeAsync(PaginationDto paginationDto);
+    Task<List<ImageType>> GetAllImageTypeAsync(GenericFilterDto genericFilterDto);
     Task<ImageType> GetImageTypeByIdAsync(int id);
     Task<bool> CheckIsImageTypeExistByNameAsync(string name);
     Task InsertImageTypeAsync(ImageType imageType);

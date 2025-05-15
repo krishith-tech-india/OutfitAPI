@@ -10,6 +10,7 @@ using System.Linq;
 using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Repo;
 
@@ -21,9 +22,31 @@ public class OrderStatusRepo : BaseRepo<OrderStatus>, IOrderStatusRepo
         _userContext = userContext;
     }
 
-    public async Task<List<OrderStatus>> GetAllOrderStatusAsync(PaginationDto paginationDto)
+    public async Task<List<OrderStatus>> GetAllOrderStatusAsync(GenericFilterDto genericFilterDto)
     {
-        return await Select(x => !x.IsDeleted).OrderBy(x => x.Id).Skip((paginationDto.PageNo - 1) * paginationDto.PageSize).Take(paginationDto.PageSize).ToListAsync();
+
+        IQueryable<OrderStatus> orderStatuse = GetQueyable().Where(x => !x.IsDeleted);
+
+        //TextQuery
+        if (!string.IsNullOrWhiteSpace(genericFilterDto.GenericTextFilter))
+            orderStatuse = orderStatuse.Where(x =>
+                        x.Name.ToLower().Contains(genericFilterDto.GenericTextFilter) ||
+                        (!string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(genericFilterDto.GenericTextFilter))
+                    );
+
+        //OrderByQuery
+        if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByNameValue, StringComparison.OrdinalIgnoreCase))
+            orderStatuse = orderStatuse.OrderBy(x => x.Name);
+        else if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByDescriptionValue, StringComparison.OrdinalIgnoreCase))
+            orderStatuse = orderStatuse.OrderBy(x => x.Description);
+        else
+            orderStatuse = orderStatuse.OrderBy(x => x.Id);
+
+        //Pagination
+        if (genericFilterDto.IsPagination)
+            orderStatuse = orderStatuse.Skip((genericFilterDto.PageNo - 1) * genericFilterDto.PageSize).Take(genericFilterDto.PageSize);
+
+        return await orderStatuse.ToListAsync();
     }
 
     public async Task<OrderStatus> GetOrderStatusByIdAsync(int id)
@@ -55,6 +78,12 @@ public class OrderStatusRepo : BaseRepo<OrderStatus>, IOrderStatusRepo
         Update(orderStatus);
         await SaveChangesAsync();
     }
+
+    public async Task<bool> CheckIsOrderStatusExistByNameAsync(string Name)
+    {
+        return await AnyAsync(x => !x.IsDeleted && x.Name.ToLower().Equals(Name.ToLower()));
+    }
+
     private async Task CheckIsOrderStatusDataValidOrNotAsync(OrderStatus orderStatus)
     {
         if (string.IsNullOrWhiteSpace(orderStatus.Name))

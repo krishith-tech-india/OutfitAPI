@@ -15,10 +15,6 @@ public class RoleRepo : BaseRepo<Role>, IRoleRepo
     {
         _userContext = userContext;
     }
-    public async Task<List<Role>> GetAllRolesAsync(PaginationDto paginationDto)
-    {
-        return await Select(x => !x.IsDeleted).OrderBy(x => x.Id).Skip((paginationDto.PageNo - 1) * paginationDto.PageSize).Take(paginationDto.PageSize).ToListAsync();
-    }
 
     public async Task<Role> GetRoleByIdAsync(int id)
     {

@@ -28,6 +28,8 @@ public class AddressRepo : BaseRepo<Address>, IAddressRepo
             throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage,"Address", "Line 1"));
         if (string.IsNullOrWhiteSpace(address.City))
             throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Address", "City"));
+        if (string.IsNullOrWhiteSpace(address.District))
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Address", "District"));
         if (string.IsNullOrWhiteSpace(address.State))
             throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Address", "State"));
         if (string.IsNullOrWhiteSpace(address.Country))
@@ -42,8 +44,6 @@ public class AddressRepo : BaseRepo<Address>, IAddressRepo
             address.Landmark = null;
         if (string.IsNullOrWhiteSpace(address.Village))
             address.Village = null;
-        if (string.IsNullOrWhiteSpace(address.District))
-            address.District = null;
     }
 
     public async Task<Address> GetAddressByIdAsync(int id)
@@ -54,10 +54,14 @@ public class AddressRepo : BaseRepo<Address>, IAddressRepo
         return address;
     }
 
-    public async Task<List<Address>> GetAddressByUserIdAsync(int userId,PaginationDto paginationDto)
+    public async Task<List<Address>> GetAddressByUserIdAsync(int userId, PaginationDto paginationDto)
     {
-        List<Address> addresses = await Select(x => x.UserId.Equals(userId)).OrderBy(x => x.Id).Skip((paginationDto.PageNo - 1) * paginationDto.PageSize).Take(paginationDto.PageSize).ToListAsync();
-        return addresses;
+        IQueryable<Address> AddressQuery = GetQueyable().Where(x => x.UserId.Equals(userId)).OrderBy(x => x.Id);
+        
+        if (paginationDto.IsPagination)
+            AddressQuery = AddressQuery.Skip((paginationDto.PageNo - 1) * paginationDto.PageSize).Take(paginationDto.PageSize);
+        
+        return await AddressQuery.ToListAsync();
     }
 
     public async Task InsertUserAsync(Address address)

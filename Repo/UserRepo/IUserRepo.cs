@@ -8,7 +8,6 @@ public interface IUserRepo : IBaseRepo<User>
 {
     Task<bool> CheckUserEmailExistOrNotAsync(string email); 
     Task<bool> CheckUserPhoneNoExistOrNotAsync(string phoneNo);
-    Task<List<User>> GetAllUserAsync(PaginationDto paginationDto);
     Task<User> GetUserByIdAsync(int id);
     Task InsertUserAsync(User user);
     Task UpdateUserAsync(User user);

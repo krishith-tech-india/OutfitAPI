@@ -12,7 +12,7 @@ namespace Repo
         Task InsertAsync(T entity);
         void Update(T entity);
         //void Delete(T entity);
-        IQueryable<T> Select(Expression<Func<T, bool>> expression);
+        //IQueryable<T> Where(Expression<Func<T, bool>> expression);
         Task<bool> AnyAsync(Expression<Func<T, bool>> expression);
         Task SaveChangesAsync();
     }

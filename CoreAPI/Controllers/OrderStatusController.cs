@@ -20,9 +20,9 @@ namespace API.Controllers
 
         [Authorize]
         [HttpPost("GetAll")]
-        public async Task<ApiResponse> GetAllOrderStatus([FromBody] PaginationDto paginationDto)
+        public async Task<ApiResponse> GetAllOrderStatus([FromBody] GenericFilterDto genericFilterDto)
         {
-            return new ApiResponse(HttpStatusCode.OK, await _orderStatusService.GetAllOrderStatusAsync(paginationDto));
+            return new ApiResponse(HttpStatusCode.OK, await _orderStatusService.GetAllOrderStatusAsync(genericFilterDto));
         }
 
         [Authorize]
@@ -54,6 +54,13 @@ namespace API.Controllers
         {
             await _orderStatusService.DeleteOrderStatusAsync(Id);
             return new ApiResponse(HttpStatusCode.OK);
+        }
+
+        [Authorize]
+        [HttpGet("OrderStatusExistByName/{Name}")]
+        public async Task<ApiResponse> IsOrderStatusExistByName(string Name)
+        {
+            return new ApiResponse(HttpStatusCode.OK, await _orderStatusService.IsOrderStatusExistByNameAsync(Name));
         }
 
     }

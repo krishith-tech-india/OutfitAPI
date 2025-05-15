@@ -8,6 +8,20 @@ namespace Dto;
 
 public class PaginationDto
 {
-    public int PageSize { get; set; } = 5;
-    public int PageNo { get; set; } = 1;
+    private bool isPagination;
+    public int PageSize { get; set; }
+    public int PageNo { get; set; }
+    public bool IsPagination {
+        get
+        {
+            if (PageSize == 0 || PageNo == 0)
+                return false;
+            
+            return isPagination;
+        }
+        set 
+        {
+            isPagination = value;
+        } 
+    }
 }

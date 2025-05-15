@@ -15,11 +15,6 @@ public class UserRepo : BaseRepo<User>, IUserRepo
         _userContext = userContext;
     }
 
-    public async Task<List<User>> GetAllUserAsync(PaginationDto paginationDto)
-    {
-        return await Select(x => !x.IsDeleted).OrderBy(x => x.Id).Skip((paginationDto.PageNo - 1) * paginationDto.PageSize).Take(paginationDto.PageSize).ToListAsync();
-    }
-
     public async Task<User> GetUserByIdAsync(int id)
     {
         var user = await GetByIdAsync(id);
@@ -30,22 +25,23 @@ public class UserRepo : BaseRepo<User>, IUserRepo
 
     public async Task<bool> CheckUserEmailExistOrNotAsync(string email)
     {
-        return await AnyAsync(x => !x.IsDeleted && x.Email.Equals(email));
+        return await AnyAsync(x => x.Email.ToLower().Equals(email.ToLower()));
     }
 
     public async Task<bool> CheckUserPhoneNoExistOrNotAsync(string phoneNo)
     {
-        return await AnyAsync(x => !x.IsDeleted && x.PhNo == phoneNo);
+        return await AnyAsync(x => x.PhNo == phoneNo);
     }
 
     public async Task InsertUserAsync(User user)
     {
         await CheckDataValidOrnotAsync(user);
-        user.AddedOn = DateTime.Now;
-        if (_userContext.loggedInUser.Id != 0)
-            user.AddedBy = _userContext.loggedInUser.Id;
-        await InsertAsync(user);
-        await SaveChangesAsync();
+       
+            user.AddedOn = DateTime.Now;
+            if (_userContext.loggedInUser.Id != 0)
+                user.AddedBy = _userContext.loggedInUser.Id;
+            await InsertAsync(user);
+            await SaveChangesAsync();
     }
 
 
@@ -63,10 +59,9 @@ public class UserRepo : BaseRepo<User>, IUserRepo
         return await AnyAsync(x => x.RoleId.Equals(id) && !x.IsDeleted);
     }
 
-    //8.
     public async Task<User?> GetUserByEmailOrPhone(string emailOrPhone, string password)
     {
-        return await GetQueyable().FirstOrDefaultAsync(x => x.Email.Equals(emailOrPhone) || x.PhNo == emailOrPhone);
+        return await GetQueyable().FirstOrDefaultAsync(x => (x.Email.ToLower().Equals(emailOrPhone.ToLower()) || x.PhNo == emailOrPhone) && !x.IsDeleted);
     }
 
     public async Task<bool> CheckIsUserIdExistAsync(int userid)
@@ -86,6 +81,6 @@ public class UserRepo : BaseRepo<User>, IUserRepo
     }
     private async Task<bool> ExistingUserPhonenoAndEmailUniqueOrNotAsync(string phoneNo, string email, int currentUserId)
     {
-        return await AnyAsync(x => !x.IsDeleted && !x.Id.Equals(currentUserId) && (x.Email.Equals(email) || x.PhNo == phoneNo));
+        return await AnyAsync(x => !x.Id.Equals(currentUserId) && (x.Email.ToLower().Equals(email.ToLower()) || x.PhNo == phoneNo));
     }
 }

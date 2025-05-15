@@ -22,9 +22,30 @@ public class ImageTypeRepo : BaseRepo<ImageType>, IImageTypeRepo
         _userContext = userContext;
     }
 
-    public async Task<List<ImageType>> GetAllImageTypeAsync(PaginationDto paginationDto)
+    public async Task<List<ImageType>> GetAllImageTypeAsync(GenericFilterDto genericFilterDto)
     {
-        return await Select(x => !x.IsDeleted).OrderBy(x => x.Id).Skip((paginationDto.PageNo - 1) * paginationDto.PageSize).Take(paginationDto.PageSize).ToListAsync();
+        IQueryable<ImageType> imageTypeQuery = GetQueyable().Where(x => !x.IsDeleted);
+
+        //TextQuery
+        if (!string.IsNullOrWhiteSpace(genericFilterDto.GenericTextFilter))
+            imageTypeQuery = imageTypeQuery.Where(x => 
+                        x.Name.ToLower().Contains(genericFilterDto.GenericTextFilter) ||
+                        (!string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(genericFilterDto.GenericTextFilter))
+                    );
+
+        //OrderByQuery
+        if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByNameValue, StringComparison.OrdinalIgnoreCase))
+            imageTypeQuery = imageTypeQuery.OrderBy(x => x.Name);
+        else if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByDescriptionValue, StringComparison.OrdinalIgnoreCase))
+            imageTypeQuery = imageTypeQuery.OrderBy(x => x.Description);
+        else
+            imageTypeQuery = imageTypeQuery.OrderBy(x => x.Id);
+
+        //Pagination
+        if (genericFilterDto.IsPagination)
+            imageTypeQuery = imageTypeQuery.Skip((genericFilterDto.PageNo - 1) * genericFilterDto.PageSize).Take(genericFilterDto.PageSize);
+        
+        return await imageTypeQuery.ToListAsync();
     }
 
     public async Task<ImageType> GetImageTypeByIdAsync(int id)

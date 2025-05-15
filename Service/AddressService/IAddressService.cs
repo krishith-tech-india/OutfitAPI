@@ -10,6 +10,6 @@ namespace Service;
 public interface IAddressService
 {
     Task<AddressDto> GetAddressByIdAsync(int id);
-    Task<List<AddressDto>> GetAddressByUserIdAsync(int UserId,PaginationDto paginationDto);
+    Task<List<AddressDto>> GetAddressByUserIdAsync(int UserId, GenericFilterDto genericFilterDto);
     Task AddAddressAsync(AddressDto addressDto);
 }

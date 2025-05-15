@@ -10,7 +10,7 @@ namespace Service;
 
 public interface IImageTypeService
 {
-    Task<List<ImageTypeDto>> GetImageTypeAsync(PaginationDto paginationDto);
+    Task<List<ImageTypeDto>> GetImageTypeAsync(GenericFilterDto genericFilterDto);
     Task<ImageTypeDto> GetImageTypeByIdAsync(int id);
     Task<bool> IsImageTypeExistByNameAsync(string name);
     Task AddImageType(ImageTypeDto imageTypeDto);

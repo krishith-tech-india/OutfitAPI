@@ -10,6 +10,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Repo;
+using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Net;
 using System.Security.Claims;
@@ -38,15 +39,105 @@ public class UserService : IUserService
         _jwtConfig = jwtConfig.Value;
     }
 
-    public async Task<List<UserDto>> GetUsersAsync(PaginationDto paginationDto)
+    public async Task<List<UserDto>> GetUsersAsync(GenericFilterDto genericFilterDto)
     {
-        var users = await _userRepo.GetAllUserAsync(paginationDto);
-        return users.Select(x => _userMapper.GetUserDto(x)).ToList();
+        var userQuery = _userRepo.GetQueyable();
+        var roleQuery = _roleRepo.GetQueyable();
+
+        IQueryable<UserDto> UserQuery = userQuery
+            .Join(
+                roleQuery,
+                user => user.RoleId,
+                role => role.Id,
+                (user, role) => new
+                {
+                    user.Id,
+                    user.Name,
+                    RoleId = role.Id,
+                    user.Email,
+                    user.PhNo,
+                    role.RoleName,
+                    RoleDeleted = role.IsDeleted,
+                    user.IsDeleted
+                }
+            )
+            .Where(x => !x.IsDeleted && !x.RoleDeleted)
+            .Select(x => new UserDto()
+             {
+                 Id = x.Id,
+                 Name = x.Name,
+                 RoleId = x.RoleId,
+                 Email = x.Email,
+                 PhNo = x.PhNo,
+                 RoleName = x.RoleName,
+             });
+
+
+        //TextQuery
+        if (!string.IsNullOrWhiteSpace(genericFilterDto.GenericTextFilter))
+            UserQuery = UserQuery.Where(x =>
+                        x.Name.ToLower().Contains(genericFilterDto.GenericTextFilter) ||
+                        x.RoleName.ToLower().Contains(genericFilterDto.GenericTextFilter) ||
+                        x.Email.ToLower().Contains(genericFilterDto.GenericTextFilter) ||
+                        x.PhNo.ToLower().Contains(genericFilterDto.GenericTextFilter)
+                    );
+
+        //OrderByQuery
+        if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByNameValue, StringComparison.OrdinalIgnoreCase))
+            UserQuery = UserQuery.OrderBy(x => x.Name);
+        else if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByRoleNameValue, StringComparison.OrdinalIgnoreCase))
+            UserQuery = UserQuery.OrderBy(x => x.RoleName);
+        else if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByEmailValue, StringComparison.OrdinalIgnoreCase))
+            UserQuery = UserQuery.OrderBy(x => x.Email);
+        else if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByPhoneNoValue, StringComparison.OrdinalIgnoreCase))
+            UserQuery = UserQuery.OrderBy(x => x.PhNo);
+        else
+            UserQuery = UserQuery.OrderBy(x => x.Id);
+
+        //Pagination
+        if (genericFilterDto.IsPagination)
+            UserQuery = UserQuery.Skip((genericFilterDto.PageNo - 1) * genericFilterDto.PageSize).Take(genericFilterDto.PageSize);
+
+        var Query = UserQuery.ToQueryString();
+
+        return await UserQuery.ToListAsync();
+
     }
 
     public async Task<UserDto> GetUserByIdAsync(int id)
     {
-        return _userMapper.GetUserDto(await _userRepo.GetUserByIdAsync(id));
+        var userQuery = _userRepo.GetQueyable();
+        var roleQuery = _roleRepo.GetQueyable();
+
+        var user = await userQuery.Join(
+                roleQuery,
+                user => user.RoleId,
+                role => role.Id,
+                (user, role) => new
+                {
+                    user.Id,
+                    user.Name,
+                    RoleId = role.Id,
+                    user.Email,
+                    user.PhNo,
+                    role.RoleName,
+                    RoleDeleted = role.IsDeleted,
+                    user.IsDeleted
+                }
+            )
+            .Where(x => x.Id == id && !x.IsDeleted && !x.RoleDeleted)
+            .Select(x => new UserDto()
+            {
+                Id = x.Id,
+                Name = x.Name,
+                RoleId = x.RoleId,
+                Email = x.Email,
+                PhNo = x.PhNo,
+                RoleName = x.RoleName,
+            }).FirstOrDefaultAsync();
+        if (user == null)
+            throw new ApiException(HttpStatusCode.NotFound, string.Format(Constants.NotExistExceptionMessage, "User", "Id", id));
+        return user;
     }
     public async Task<string> AddUserAsync(UserDto userDto)
     {

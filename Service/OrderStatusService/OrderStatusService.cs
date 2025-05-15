@@ -1,11 +1,14 @@
-﻿using Dto;
+﻿using Core;
+using Dto;
 using Mapper;
 using Repo;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace Service;
 
@@ -23,9 +26,9 @@ public class OrderStatusService : IOrderStatusService
         _orderStatusMapper = orderStatusMapper;
     }
 
-    public async Task<List<OrderStatusDto>> GetAllOrderStatusAsync(PaginationDto paginationDto)
+    public async Task<List<OrderStatusDto>> GetAllOrderStatusAsync(GenericFilterDto genericFilterDto)
     {
-        var orderStatus = await _orderStatusRepo.GetAllOrderStatusAsync(paginationDto);
+        var orderStatus = await _orderStatusRepo.GetAllOrderStatusAsync(genericFilterDto);
         return orderStatus.Select(x => _orderStatusMapper.GetOrderStatusDto(x)).ToList();
     }
 
@@ -53,5 +56,10 @@ public class OrderStatusService : IOrderStatusService
         var OrderStatus = await _orderStatusRepo.GetOrderStatusByIdAsync(id);
         OrderStatus.IsDeleted = true;
         await _orderStatusRepo.UpdateOrderStatusAsync(OrderStatus);
+    }
+
+    public async Task<bool> IsOrderStatusExistByNameAsync(string Name)
+    {
+        return await _orderStatusRepo.CheckIsOrderStatusExistByNameAsync(Name);
     }
 }

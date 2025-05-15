@@ -65,10 +65,10 @@ namespace Repo
             await _context.SaveChangesAsync();
         }
 
-        public IQueryable<T> Select(Expression<Func<T, bool>> expression)
-        {
-            return _db.Where(expression);
-        }
+        //public IQueryable<T> Where(Expression<Func<T, bool>> expression)
+        //{
+        //    return _db.Where(expression);
+        //}
 
         public void Update(T entity)
         {
