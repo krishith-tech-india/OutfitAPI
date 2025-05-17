@@ -6,7 +6,7 @@ namespace Service;
 
 public interface IRoleService
 {
-    Task<List<RoleDto>> GetRolesAsync(GenericFilterDto genericFilterDto);
+    Task<List<RoleDto>> GetRolesAsync(RoleFilterDto roleFilterDto);
     Task<RoleDto> GetRoleByIdAsync(int id);
     Task AddRoleAsync(RoleDto roleDto);
     Task DeleteRoleAsync(int id);

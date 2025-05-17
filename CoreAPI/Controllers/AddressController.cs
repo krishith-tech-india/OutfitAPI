@@ -27,9 +27,9 @@ namespace API.Controllers
 
         [Authorize]
         [HttpPost("UserId/{userId}")]
-        public async Task<ApiResponse> GetAddressByUserId([FromRoute]int userId,[FromBody] GenericFilterDto genericFilterDto)
+        public async Task<ApiResponse> GetAddressByUserId([FromRoute]int userId,[FromBody] AddressFilterDto addressFilterDto)
         {
-            return new ApiResponse(HttpStatusCode.OK , await _addressService.GetAddressByUserIdAsync(userId,genericFilterDto));
+            return new ApiResponse(HttpStatusCode.OK , await _addressService.GetAddressByUserIdAsync(userId,addressFilterDto));
         }
 
         [Authorize]

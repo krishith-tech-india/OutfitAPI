@@ -22,9 +22,9 @@ namespace API.Controllers
 
         [Authorize]
         [HttpPost("GetAllImageType/")]
-        public async Task<ApiResponse> GetAllImageType(GenericFilterDto genericFilterDto)
+        public async Task<ApiResponse> GetAllImageType(ImageTypeFilterDto imageTypeFilterDto)
         {
-            return new ApiResponse(HttpStatusCode.OK, await _imageTypeService.GetImageTypeAsync(genericFilterDto));
+            return new ApiResponse(HttpStatusCode.OK, await _imageTypeService.GetImageTypeAsync(imageTypeFilterDto));
         }
 
         [Authorize]

@@ -78,16 +78,16 @@ public class AddressService : IAddressService
         return address;
     }
 
-    public async Task<List<AddressDto>> GetAddressByUserIdAsync(int UserId, GenericFilterDto genericFilterDto)
+    public async Task<List<AddressDto>> GetAddressByUserIdAsync(int UserId, AddressFilterDto addressFilterDto)
     {
         if (!await _userRepo.CheckIsUserIdExistAsync(UserId))
             throw new ApiException(System.Net.HttpStatusCode.NotFound,string.Format(Constants.NotExistExceptionMessage, "User","Id",UserId));
 
-        var addressQuery = _addressRepo.GetQueyable();
-        var userQuery = _userRepo.GetQueyable();
+        var addressQueriable = _addressRepo.GetQueyable();
+        var userQueriable = _userRepo.GetQueyable();
 
-        IQueryable<AddressDto> AddressQuery = addressQuery.
-            Join(userQuery,
+        IQueryable<AddressDto> AddressQuery = addressQueriable.
+            Join(userQueriable,
                 address => address.UserId,
                 user => user.Id,
                 (addrss, user) => new
@@ -124,55 +124,77 @@ public class AddressService : IAddressService
                 Pincode = x.Pincode,
             });
 
-        //TextQuery
-        if (!string.IsNullOrWhiteSpace(genericFilterDto.GenericTextFilter))
+        //GenericTextFilterQuery
+        if (!string.IsNullOrWhiteSpace(addressFilterDto.GenericTextFilter))
             AddressQuery = AddressQuery.Where(x =>
-                        x.UserName.ToLower().Contains(genericFilterDto.GenericTextFilter) ||
-                        (!string.IsNullOrWhiteSpace(x.AddressName) && x.AddressName.ToLower().Contains(genericFilterDto.GenericTextFilter)) ||
-                        x.Line1.ToLower().Contains(genericFilterDto.GenericTextFilter) ||
-                        (!string.IsNullOrWhiteSpace(x.Line2) && x.Line2.ToLower().Contains(genericFilterDto.GenericTextFilter)) ||
-                        (!string.IsNullOrWhiteSpace(x.Landmark) && x.Landmark.ToLower().Contains(genericFilterDto.GenericTextFilter)) ||
-                        (!string.IsNullOrWhiteSpace(x.Village) && x.Village.ToLower().Contains(genericFilterDto.GenericTextFilter)) ||
-                        x.City.ToLower().Contains(genericFilterDto.GenericTextFilter) ||
-                        x.District.ToLower().Contains(genericFilterDto.GenericTextFilter) ||
-                        x.State.ToLower().Contains(genericFilterDto.GenericTextFilter) ||
-                        x.Country.ToLower().Contains(genericFilterDto.GenericTextFilter) ||
-                        x.Pincode.ToLower().Contains(genericFilterDto.GenericTextFilter)
+                        x.UserName.ToLower().Contains(addressFilterDto.GenericTextFilter) ||
+                        (!string.IsNullOrWhiteSpace(x.AddressName) && x.AddressName.ToLower().Contains(addressFilterDto.GenericTextFilter)) ||
+                        x.Line1.ToLower().Contains(addressFilterDto.GenericTextFilter) ||
+                        (!string.IsNullOrWhiteSpace(x.Line2) && x.Line2.ToLower().Contains(addressFilterDto.GenericTextFilter)) ||
+                        (!string.IsNullOrWhiteSpace(x.Landmark) && x.Landmark.ToLower().Contains(addressFilterDto.GenericTextFilter)) ||
+                        (!string.IsNullOrWhiteSpace(x.Village) && x.Village.ToLower().Contains(addressFilterDto.GenericTextFilter)) ||
+                        x.City.ToLower().Contains(addressFilterDto.GenericTextFilter) ||
+                        x.District.ToLower().Contains(addressFilterDto.GenericTextFilter) ||
+                        x.State.ToLower().Contains(addressFilterDto.GenericTextFilter) ||
+                        x.Country.ToLower().Contains(addressFilterDto.GenericTextFilter) ||
+                        x.Pincode.ToLower().Contains(addressFilterDto.GenericTextFilter)
                     );
 
+        //FieldTextFilterQuery
+        if (!string.IsNullOrWhiteSpace(addressFilterDto.UserNameFilterText))
+            AddressQuery = AddressQuery.Where(x => x.UserName.ToLower().Contains(addressFilterDto.UserNameFilterText.ToLower()));
+        if (!string.IsNullOrWhiteSpace(addressFilterDto.AddressNameFilterText))
+            AddressQuery = AddressQuery.Where(x => !string.IsNullOrWhiteSpace(x.AddressName) && x.AddressName.ToLower().Contains(addressFilterDto.AddressNameFilterText.ToLower()));
+        if(!string.IsNullOrWhiteSpace(addressFilterDto.Line1FilterText))
+            AddressQuery = AddressQuery.Where(x => x.Line1.ToLower().Contains(addressFilterDto.Line1FilterText.ToLower()));
+        if(!string.IsNullOrWhiteSpace(addressFilterDto.Line2FilterText))
+            AddressQuery = AddressQuery.Where(x => !string.IsNullOrWhiteSpace(x.Line2) && x.Line2.ToLower().Contains(addressFilterDto.Line2FilterText.ToLower()));
+        if (!string.IsNullOrWhiteSpace(addressFilterDto.LandmarkFilterText))
+            AddressQuery = AddressQuery.Where(x => !string.IsNullOrWhiteSpace(x.Landmark) && x.Landmark.ToLower().Contains(addressFilterDto.LandmarkFilterText.ToLower()));
+        if (!string.IsNullOrWhiteSpace(addressFilterDto.VillageFilterText))
+            AddressQuery = AddressQuery.Where(x => !string.IsNullOrWhiteSpace(x.Village) && x.Village.ToLower().Contains(addressFilterDto.VillageFilterText.ToLower()));
+        if (!string.IsNullOrWhiteSpace(addressFilterDto.CityFilterText))
+            AddressQuery = AddressQuery.Where(x => x.City.ToLower().Contains(addressFilterDto.CityFilterText.ToLower()));
+        if (!string.IsNullOrWhiteSpace(addressFilterDto.DistrictFilterText))
+            AddressQuery = AddressQuery.Where(x => x.District.ToLower().Contains(addressFilterDto.DistrictFilterText.ToLower()));
+        if (!string.IsNullOrWhiteSpace(addressFilterDto.StateFilterText))
+            AddressQuery = AddressQuery.Where(x => x.State.ToLower().Contains(addressFilterDto.StateFilterText.ToLower()));
+        if (!string.IsNullOrWhiteSpace(addressFilterDto.CountryFilterText))
+            AddressQuery = AddressQuery.Where(x => x.Country.ToLower().Contains(addressFilterDto.CountryFilterText.ToLower()));
+        if (!string.IsNullOrWhiteSpace(addressFilterDto.PincodeFilterText))
+            AddressQuery = AddressQuery.Where(x => x.Pincode.ToLower().Contains(addressFilterDto.PincodeFilterText.ToLower()));
+
         //OrderByQuery
-        if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByUserNameValue, StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrWhiteSpace(addressFilterDto.OrderByField) && addressFilterDto.OrderByField.ToLower().Equals(Constants.OrderByUserNameValue, StringComparison.OrdinalIgnoreCase))
             AddressQuery = AddressQuery.OrderBy(x => x.UserName);
-        else if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByNameValue, StringComparison.OrdinalIgnoreCase))
+        else if (!string.IsNullOrWhiteSpace(addressFilterDto.OrderByField) && addressFilterDto.OrderByField.ToLower().Equals(Constants.OrderByNameValue, StringComparison.OrdinalIgnoreCase))
             AddressQuery = AddressQuery.OrderBy(x => x.AddressName);
-        else if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByLine1Value, StringComparison.OrdinalIgnoreCase))
+        else if (!string.IsNullOrWhiteSpace(addressFilterDto.OrderByField) && addressFilterDto.OrderByField.ToLower().Equals(Constants.OrderByLine1Value, StringComparison.OrdinalIgnoreCase))
             AddressQuery = AddressQuery.OrderBy(x => x.Line1);
-        else if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByLine2Value, StringComparison.OrdinalIgnoreCase))
+        else if (!string.IsNullOrWhiteSpace(addressFilterDto.OrderByField) && addressFilterDto.OrderByField.ToLower().Equals(Constants.OrderByLine2Value, StringComparison.OrdinalIgnoreCase))
             AddressQuery = AddressQuery.OrderBy(x => x.Line2);
-        else if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByLandmarkValue, StringComparison.OrdinalIgnoreCase))
+        else if (!string.IsNullOrWhiteSpace(addressFilterDto.OrderByField) && addressFilterDto.OrderByField.ToLower().Equals(Constants.OrderByLandmarkValue, StringComparison.OrdinalIgnoreCase))
             AddressQuery = AddressQuery.OrderBy(x => x.Landmark);
-        else if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByVillageValue, StringComparison.OrdinalIgnoreCase))
+        else if (!string.IsNullOrWhiteSpace(addressFilterDto.OrderByField) && addressFilterDto.OrderByField.ToLower().Equals(Constants.OrderByVillageValue, StringComparison.OrdinalIgnoreCase))
             AddressQuery = AddressQuery.OrderBy(x => x.Village);
-        else if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByCityValue, StringComparison.OrdinalIgnoreCase))
+        else if (!string.IsNullOrWhiteSpace(addressFilterDto.OrderByField) && addressFilterDto.OrderByField.ToLower().Equals(Constants.OrderByCityValue, StringComparison.OrdinalIgnoreCase))
             AddressQuery = AddressQuery.OrderBy(x => x.City);
-        else if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByDistrictValue, StringComparison.OrdinalIgnoreCase))
+        else if (!string.IsNullOrWhiteSpace(addressFilterDto.OrderByField) && addressFilterDto.OrderByField.ToLower().Equals(Constants.OrderByDistrictValue, StringComparison.OrdinalIgnoreCase))
             AddressQuery = AddressQuery.OrderBy(x => x.District);
-        else if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByStateValue, StringComparison.OrdinalIgnoreCase))
+        else if (!string.IsNullOrWhiteSpace(addressFilterDto.OrderByField) && addressFilterDto.OrderByField.ToLower().Equals(Constants.OrderByStateValue, StringComparison.OrdinalIgnoreCase))
             AddressQuery = AddressQuery.OrderBy(x => x.State);
-        else if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByCountryValue, StringComparison.OrdinalIgnoreCase))
+        else if (!string.IsNullOrWhiteSpace(addressFilterDto.OrderByField) && addressFilterDto.OrderByField.ToLower().Equals(Constants.OrderByCountryValue, StringComparison.OrdinalIgnoreCase))
             AddressQuery = AddressQuery.OrderBy(x => x.Country);
-        else if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByPincodeValue, StringComparison.OrdinalIgnoreCase))
+        else if (!string.IsNullOrWhiteSpace(addressFilterDto.OrderByField) && addressFilterDto.OrderByField.ToLower().Equals(Constants.OrderByPincodeValue, StringComparison.OrdinalIgnoreCase))
             AddressQuery = AddressQuery.OrderBy(x => x.Pincode);
         else
             AddressQuery = AddressQuery.OrderBy(x => x.Id);
 
         //Pagination
-        if (genericFilterDto.IsPagination)
-            AddressQuery = AddressQuery.Skip((genericFilterDto.PageNo - 1) * genericFilterDto.PageSize).Take(genericFilterDto.PageSize);
+        if (addressFilterDto.IsPagination)
+            AddressQuery = AddressQuery.Skip((addressFilterDto.PageNo - 1) * addressFilterDto.PageSize).Take(addressFilterDto.PageSize);
 
         return await AddressQuery.ToListAsync();
-        //var Address = await _addressRepo.GetAddressByUserIdAsync(UserId, genericFilterDto);
-        //return Address.Select(x => _addressMapper.GetAddressDto(x)).ToList();
     }
 
     public async Task AddAddressAsync(AddressDto addressDto)

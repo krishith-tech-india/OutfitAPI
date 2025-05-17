@@ -12,7 +12,7 @@ public interface IUserService
 {
     Task<bool> CheckUserEmailExistOrNotAsync(string email);
     Task<bool> CheckUserPhoneNoExistOrNotAsync(string phoneNo);
-    Task<List<UserDto>> GetUsersAsync(GenericFilterDto genericFilterDto);
+    Task<List<UserDto>> GetUsersAsync(UserFilterDto userFilterDto);
     Task<UserDto> GetUserByIdAsync(int id);
     Task<string> AddUserAsync(UserDto userDto);
     Task DeleteUserAsync(int id);

@@ -22,9 +22,9 @@ namespace API.Controllers
 
         [Authorize]
         [HttpPost("GetAllRole")]
-        public async Task<ApiResponse> GetRole(GenericFilterDto genericFilterDto)
+        public async Task<ApiResponse> GetRole(RoleFilterDto roleFilterDto)
         {
-            return new ApiResponse(HttpStatusCode.OK, await _roleService.GetRolesAsync(genericFilterDto));
+            return new ApiResponse(HttpStatusCode.OK, await _roleService.GetRolesAsync(roleFilterDto));
         }
 
         [Authorize]

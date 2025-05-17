@@ -19,9 +19,9 @@ namespace API.Controllers
 
         [Authorize]
         [HttpPost("GetAllUser")]
-        public async Task<ApiResponse> GetaAllUser(GenericFilterDto genericFilterDto)
+        public async Task<ApiResponse> GetaAllUser(UserFilterDto userFilterDto)
         {
-            return new ApiResponse(HttpStatusCode.OK, await _userService.GetUsersAsync(genericFilterDto));
+            return new ApiResponse(HttpStatusCode.OK, await _userService.GetUsersAsync(userFilterDto));
         }
 
         [Authorize]

@@ -3,6 +3,7 @@ using Core.Authentication;
 using Data.Contexts;
 using Data.Models;
 using Dto;
+using Dto.OrderStatus;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -20,33 +21,6 @@ public class OrderStatusRepo : BaseRepo<OrderStatus>, IOrderStatusRepo
     public OrderStatusRepo(OutfitDBContext context, IUserContext userContext) : base(context)
     {
         _userContext = userContext;
-    }
-
-    public async Task<List<OrderStatus>> GetAllOrderStatusAsync(GenericFilterDto genericFilterDto)
-    {
-
-        IQueryable<OrderStatus> orderStatuse = GetQueyable().Where(x => !x.IsDeleted);
-
-        //TextQuery
-        if (!string.IsNullOrWhiteSpace(genericFilterDto.GenericTextFilter))
-            orderStatuse = orderStatuse.Where(x =>
-                        x.Name.ToLower().Contains(genericFilterDto.GenericTextFilter) ||
-                        (!string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(genericFilterDto.GenericTextFilter))
-                    );
-
-        //OrderByQuery
-        if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByNameValue, StringComparison.OrdinalIgnoreCase))
-            orderStatuse = orderStatuse.OrderBy(x => x.Name);
-        else if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByDescriptionValue, StringComparison.OrdinalIgnoreCase))
-            orderStatuse = orderStatuse.OrderBy(x => x.Description);
-        else
-            orderStatuse = orderStatuse.OrderBy(x => x.Id);
-
-        //Pagination
-        if (genericFilterDto.IsPagination)
-            orderStatuse = orderStatuse.Skip((genericFilterDto.PageNo - 1) * genericFilterDto.PageSize).Take(genericFilterDto.PageSize);
-
-        return await orderStatuse.ToListAsync();
     }
 
     public async Task<OrderStatus> GetOrderStatusByIdAsync(int id)

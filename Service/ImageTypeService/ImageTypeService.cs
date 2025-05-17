@@ -1,6 +1,8 @@
-﻿using Data.Models;
+﻿using Core;
+using Data.Models;
 using Dto;
 using Mapper;
+using Microsoft.EntityFrameworkCore;
 using Repo;
 using System;
 using System.Collections.Generic;
@@ -23,9 +25,36 @@ public class ImageTypeService : IImageTypeService
         _imageTypeMapper = imageTypeMapper;
     }
 
-    public async Task<List<ImageTypeDto>> GetImageTypeAsync(GenericFilterDto genericFilterDto)
+    public async Task<List<ImageTypeDto>> GetImageTypeAsync(ImageTypeFilterDto imageTypeFilterDto)
     {
-        var imageType = await _imageTypeRepo.GetAllImageTypeAsync(genericFilterDto);
+        IQueryable<ImageType> imageTypeQuery = _imageTypeRepo.GetQueyable().Where(x => !x.IsDeleted);
+
+        //GenericTextFilterQuery
+        if (!string.IsNullOrWhiteSpace(imageTypeFilterDto.GenericTextFilter))
+            imageTypeQuery = imageTypeQuery.Where(x =>
+                        x.Name.ToLower().Contains(imageTypeFilterDto.GenericTextFilter) ||
+                        (!string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(imageTypeFilterDto.GenericTextFilter))
+                    );
+
+        //FieldTextFilterQuery
+        if (!string.IsNullOrWhiteSpace(imageTypeFilterDto.NameFilterText))
+            imageTypeQuery = imageTypeQuery.Where(x => x.Name.ToLower().Contains(imageTypeFilterDto.NameFilterText.ToLower()));
+        if (!string.IsNullOrWhiteSpace(imageTypeFilterDto.DescriptionFilterText))
+            imageTypeQuery = imageTypeQuery.Where(x => !string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(imageTypeFilterDto.DescriptionFilterText.ToLower()));
+
+        //OrderByQuery
+        if (!string.IsNullOrWhiteSpace(imageTypeFilterDto.OrderByField) && imageTypeFilterDto.OrderByField.ToLower().Equals(Constants.OrderByNameValue, StringComparison.OrdinalIgnoreCase))
+            imageTypeQuery = imageTypeQuery.OrderBy(x => x.Name);
+        else if (!string.IsNullOrWhiteSpace(imageTypeFilterDto.OrderByField) && imageTypeFilterDto.OrderByField.ToLower().Equals(Constants.OrderByDescriptionValue, StringComparison.OrdinalIgnoreCase))
+            imageTypeQuery = imageTypeQuery.OrderBy(x => x.Description);
+        else
+            imageTypeQuery = imageTypeQuery.OrderBy(x => x.Id);
+
+        //Pagination
+        if (imageTypeFilterDto.IsPagination)
+            imageTypeQuery = imageTypeQuery.Skip((imageTypeFilterDto.PageNo - 1) * imageTypeFilterDto.PageSize).Take(imageTypeFilterDto.PageSize);
+
+        var imageType = await imageTypeQuery.ToListAsync();
         return imageType.Select(x => _imageTypeMapper.GetImageTypeDto(x)).ToList();
     }
 

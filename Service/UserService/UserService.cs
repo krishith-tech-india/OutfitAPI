@@ -39,7 +39,7 @@ public class UserService : IUserService
         _jwtConfig = jwtConfig.Value;
     }
 
-    public async Task<List<UserDto>> GetUsersAsync(GenericFilterDto genericFilterDto)
+    public async Task<List<UserDto>> GetUsersAsync(UserFilterDto userFilterDto)
     {
         var userQuery = _userRepo.GetQueyable();
         var roleQuery = _roleRepo.GetQueyable();
@@ -73,30 +73,40 @@ public class UserService : IUserService
              });
 
 
-        //TextQuery
-        if (!string.IsNullOrWhiteSpace(genericFilterDto.GenericTextFilter))
+        //GenericTextFilterQuery
+        if (!string.IsNullOrWhiteSpace(userFilterDto.GenericTextFilter))
             UserQuery = UserQuery.Where(x =>
-                        x.Name.ToLower().Contains(genericFilterDto.GenericTextFilter) ||
-                        x.RoleName.ToLower().Contains(genericFilterDto.GenericTextFilter) ||
-                        x.Email.ToLower().Contains(genericFilterDto.GenericTextFilter) ||
-                        x.PhNo.ToLower().Contains(genericFilterDto.GenericTextFilter)
+                        x.Name.ToLower().Contains(userFilterDto.GenericTextFilter) ||
+                        x.RoleName.ToLower().Contains(userFilterDto.GenericTextFilter) ||
+                        x.Email.ToLower().Contains(userFilterDto.GenericTextFilter) ||
+                        x.PhNo.ToLower().Contains(userFilterDto.GenericTextFilter)
                     );
 
+        //FieldTextFilterQuery
+        if (!string.IsNullOrWhiteSpace(userFilterDto.RoleNameFilterText))
+            UserQuery = UserQuery.Where(x => x.RoleName.ToLower().Contains(userFilterDto.RoleNameFilterText.ToLower()));
+        if (!string.IsNullOrWhiteSpace(userFilterDto.EmailFilterText))
+            UserQuery = UserQuery.Where(x => x.Email.ToLower().Contains(userFilterDto.EmailFilterText.ToLower()));
+        if (!string.IsNullOrWhiteSpace(userFilterDto.PhNoFilterText))
+            UserQuery = UserQuery.Where(x => x.PhNo.ToLower().Contains(userFilterDto.PhNoFilterText.ToLower()));
+        if (!string.IsNullOrWhiteSpace(userFilterDto.NameFilterText))
+            UserQuery = UserQuery.Where(x => x.Name.ToLower().Contains(userFilterDto.NameFilterText.ToLower()));
+
         //OrderByQuery
-        if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByNameValue, StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrWhiteSpace(userFilterDto.OrderByField) && userFilterDto.OrderByField.ToLower().Equals(Constants.OrderByNameValue, StringComparison.OrdinalIgnoreCase))
             UserQuery = UserQuery.OrderBy(x => x.Name);
-        else if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByRoleNameValue, StringComparison.OrdinalIgnoreCase))
+        else if (!string.IsNullOrWhiteSpace(userFilterDto.OrderByField) && userFilterDto.OrderByField.ToLower().Equals(Constants.OrderByRoleNameValue, StringComparison.OrdinalIgnoreCase))
             UserQuery = UserQuery.OrderBy(x => x.RoleName);
-        else if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByEmailValue, StringComparison.OrdinalIgnoreCase))
+        else if (!string.IsNullOrWhiteSpace(userFilterDto.OrderByField) && userFilterDto.OrderByField.ToLower().Equals(Constants.OrderByEmailValue, StringComparison.OrdinalIgnoreCase))
             UserQuery = UserQuery.OrderBy(x => x.Email);
-        else if (!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByPhoneNoValue, StringComparison.OrdinalIgnoreCase))
+        else if (!string.IsNullOrWhiteSpace(userFilterDto.OrderByField) && userFilterDto.OrderByField.ToLower().Equals(Constants.OrderByPhoneNoValue, StringComparison.OrdinalIgnoreCase))
             UserQuery = UserQuery.OrderBy(x => x.PhNo);
         else
             UserQuery = UserQuery.OrderBy(x => x.Id);
 
         //Pagination
-        if (genericFilterDto.IsPagination)
-            UserQuery = UserQuery.Skip((genericFilterDto.PageNo - 1) * genericFilterDto.PageSize).Take(genericFilterDto.PageSize);
+        if (userFilterDto.IsPagination)
+            UserQuery = UserQuery.Skip((userFilterDto.PageNo - 1) * userFilterDto.PageSize).Take(userFilterDto.PageSize);
 
         var Query = UserQuery.ToQueryString();
 

@@ -1,6 +1,9 @@
 ﻿using Core;
+using Data.Models;
 using Dto;
+using Dto.OrderStatus;
 using Mapper;
+using Microsoft.EntityFrameworkCore;
 using Repo;
 using System;
 using System.Collections.Generic;
@@ -26,9 +29,36 @@ public class OrderStatusService : IOrderStatusService
         _orderStatusMapper = orderStatusMapper;
     }
 
-    public async Task<List<OrderStatusDto>> GetAllOrderStatusAsync(GenericFilterDto genericFilterDto)
+    public async Task<List<OrderStatusDto>> GetAllOrderStatusAsync(OrderStatusFilterDto orderStatusFilterDto)
     {
-        var orderStatus = await _orderStatusRepo.GetAllOrderStatusAsync(genericFilterDto);
+        IQueryable<OrderStatus> orderStatusQuery = _orderStatusRepo.GetQueyable().Where(x => !x.IsDeleted);
+
+        //GenericTextFilterQuery
+        if (!string.IsNullOrWhiteSpace(orderStatusFilterDto.GenericTextFilter))
+            orderStatusQuery = orderStatusQuery.Where(x =>
+                        x.Name.ToLower().Contains(orderStatusFilterDto.GenericTextFilter) ||
+                        (!string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(orderStatusFilterDto.GenericTextFilter))
+                    );
+
+        //FieldTextFilterQuery
+        if (!string.IsNullOrWhiteSpace(orderStatusFilterDto.NameFilterText))
+            orderStatusQuery = orderStatusQuery.Where(x => x.Name.ToLower().Contains(orderStatusFilterDto.NameFilterText.ToLower()));
+        if (!string.IsNullOrWhiteSpace(orderStatusFilterDto.DescriptionFilterText))
+            orderStatusQuery = orderStatusQuery.Where(x => !string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(orderStatusFilterDto.DescriptionFilterText.ToLower()));
+
+        //OrderByQuery
+        if (!string.IsNullOrWhiteSpace(orderStatusFilterDto.OrderByField) && orderStatusFilterDto.OrderByField.ToLower().Equals(Constants.OrderByNameValue, StringComparison.OrdinalIgnoreCase))
+            orderStatusQuery = orderStatusQuery.OrderBy(x => x.Name);
+        else if (!string.IsNullOrWhiteSpace(orderStatusFilterDto.OrderByField) && orderStatusFilterDto.OrderByField.ToLower().Equals(Constants.OrderByDescriptionValue, StringComparison.OrdinalIgnoreCase))
+            orderStatusQuery = orderStatusQuery.OrderBy(x => x.Description);
+        else
+            orderStatusQuery = orderStatusQuery.OrderBy(x => x.Id);
+
+        //Pagination
+        if (orderStatusFilterDto.IsPagination)
+            orderStatusQuery = orderStatusQuery.Skip((orderStatusFilterDto.PageNo - 1) * orderStatusFilterDto.PageSize).Take(orderStatusFilterDto.PageSize);
+
+        var orderStatus = await orderStatusQuery.ToListAsync();
         return orderStatus.Select(x => _orderStatusMapper.GetOrderStatusDto(x)).ToList();
     }
 

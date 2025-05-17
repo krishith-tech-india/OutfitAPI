@@ -1,5 +1,6 @@
 ﻿using Core;
 using Dto;
+using Dto.OrderStatus;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -20,9 +21,9 @@ namespace API.Controllers
 
         [Authorize]
         [HttpPost("GetAll")]
-        public async Task<ApiResponse> GetAllOrderStatus([FromBody] GenericFilterDto genericFilterDto)
+        public async Task<ApiResponse> GetAllOrderStatus([FromBody] OrderStatusFilterDto orderStatusFilterDto)
         {
-            return new ApiResponse(HttpStatusCode.OK, await _orderStatusService.GetAllOrderStatusAsync(genericFilterDto));
+            return new ApiResponse(HttpStatusCode.OK, await _orderStatusService.GetAllOrderStatusAsync(orderStatusFilterDto));
         }
 
         [Authorize]

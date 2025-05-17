@@ -1,6 +1,7 @@
 using Core;
 using Data.Models;
 using Dto;
+using Dto.OrderStatus;
 using Mapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Internal;
@@ -26,14 +27,14 @@ public class RoleService : IRoleService
         _roleMapper = roleMapper;
         _userRepo = userRepo;
     }
-    public async Task<List<RoleDto>> GetRolesAsync(GenericFilterDto genericFilterDto)
+    public async Task<List<RoleDto>> GetRolesAsync(RoleFilterDto roleFilterDto)
     {
-        var userQuery = _userRepo.GetQueyable();
-        var roleQuery = _roleRepo.GetQueyable();
+        var userQueriable = _userRepo.GetQueyable();
+        var roleQueriable = _roleRepo.GetQueyable();
 
-        IQueryable<RoleDto> RoleQuery = roleQuery
+        IQueryable<RoleDto> RoleQuery = roleQueriable
             .GroupJoin(
-                userQuery,
+                userQueriable,
                 role => role.Id,
                 user => user.RoleId,
                 (role, userList) => new
@@ -53,24 +54,32 @@ public class RoleService : IRoleService
                 UserCount = x.UserCount
             });
 
-        //TextQuery
-        if (!string.IsNullOrWhiteSpace(genericFilterDto.GenericTextFilter))
+        //GenericTextFilterQuery
+        if (!string.IsNullOrWhiteSpace(roleFilterDto.GenericTextFilter))
             RoleQuery = RoleQuery.Where(x =>
-                        x.Name.ToLower().Contains(genericFilterDto.GenericTextFilter) ||
-                        (!string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(genericFilterDto.GenericTextFilter))
+                        x.Name.ToLower().Contains(roleFilterDto.GenericTextFilter) ||
+                        (!string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(roleFilterDto.GenericTextFilter))
                     );
 
+        //FieldTextFilterQuery
+        if(!string.IsNullOrWhiteSpace(roleFilterDto.NameFilterText))
+            RoleQuery = RoleQuery.Where(x => x.Name.ToLower().Contains(roleFilterDto.NameFilterText.ToLower()));
+        if (!string.IsNullOrWhiteSpace(roleFilterDto.DescriptionFilterText))
+            RoleQuery = RoleQuery.Where(x => !string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(roleFilterDto.DescriptionFilterText.ToLower()));
+
+
+
         //OrderByQuery
-        if(!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByNameValue, StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrWhiteSpace(roleFilterDto.OrderByField) && roleFilterDto.OrderByField.ToLower().Equals(Constants.OrderByNameValue, StringComparison.OrdinalIgnoreCase))
             RoleQuery = RoleQuery.OrderBy(x => x.Name);
-        else if(!string.IsNullOrWhiteSpace(genericFilterDto.OrderByField) && genericFilterDto.OrderByField.ToLower().Equals(Constants.OrderByDescriptionValue, StringComparison.OrdinalIgnoreCase))
+        else if(!string.IsNullOrWhiteSpace(roleFilterDto.OrderByField) && roleFilterDto.OrderByField.ToLower().Equals(Constants.OrderByDescriptionValue, StringComparison.OrdinalIgnoreCase))
             RoleQuery = RoleQuery.OrderBy(x => x.Description);
         else
             RoleQuery = RoleQuery.OrderBy(x => x.Id);
 
         //Pagination
-        if (genericFilterDto.IsPagination)
-            RoleQuery = RoleQuery.Skip((genericFilterDto.PageNo - 1) * genericFilterDto.PageSize).Take(genericFilterDto.PageSize);
+        if (roleFilterDto.IsPagination)
+            RoleQuery = RoleQuery.Skip((roleFilterDto.PageNo - 1) * roleFilterDto.PageSize).Take(roleFilterDto.PageSize);
 
         return await RoleQuery.ToListAsync();
     }
