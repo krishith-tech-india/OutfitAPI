@@ -30,6 +30,7 @@ public class AddressService : IAddressService
         _addressMapper = addressMapper;
         _userRepo = userRepo;
     }
+
     public async Task<AddressDto> GetAddressByIdAsync(int id)
     {
         var addressQuery = _addressRepo.GetQueyable();
@@ -73,6 +74,7 @@ public class AddressService : IAddressService
                 Country = x.Country,
                 Pincode = x.Pincode,
             }).FirstOrDefaultAsync();
+
         if (address == null)
             throw new ApiException(System.Net.HttpStatusCode.NotFound, string.Format(Constants.NotExistExceptionMessage, "Address", "id", id));
         return address;
@@ -80,7 +82,7 @@ public class AddressService : IAddressService
 
     public async Task<List<AddressDto>> GetAddressByUserIdAsync(int UserId, AddressFilterDto addressFilterDto)
     {
-        if (!await _userRepo.CheckIsUserIdExistAsync(UserId))
+        if (!await _userRepo.IsUserIdExistAsync(UserId))
             throw new ApiException(System.Net.HttpStatusCode.NotFound,string.Format(Constants.NotExistExceptionMessage, "User","Id",UserId));
 
         var addressQueriable = _addressRepo.GetQueyable();
@@ -127,17 +129,17 @@ public class AddressService : IAddressService
         //GenericTextFilterQuery
         if (!string.IsNullOrWhiteSpace(addressFilterDto.GenericTextFilter))
             AddressQuery = AddressQuery.Where(x =>
-                        x.UserName.ToLower().Contains(addressFilterDto.GenericTextFilter) ||
-                        (!string.IsNullOrWhiteSpace(x.AddressName) && x.AddressName.ToLower().Contains(addressFilterDto.GenericTextFilter)) ||
-                        x.Line1.ToLower().Contains(addressFilterDto.GenericTextFilter) ||
-                        (!string.IsNullOrWhiteSpace(x.Line2) && x.Line2.ToLower().Contains(addressFilterDto.GenericTextFilter)) ||
-                        (!string.IsNullOrWhiteSpace(x.Landmark) && x.Landmark.ToLower().Contains(addressFilterDto.GenericTextFilter)) ||
-                        (!string.IsNullOrWhiteSpace(x.Village) && x.Village.ToLower().Contains(addressFilterDto.GenericTextFilter)) ||
-                        x.City.ToLower().Contains(addressFilterDto.GenericTextFilter) ||
-                        x.District.ToLower().Contains(addressFilterDto.GenericTextFilter) ||
-                        x.State.ToLower().Contains(addressFilterDto.GenericTextFilter) ||
-                        x.Country.ToLower().Contains(addressFilterDto.GenericTextFilter) ||
-                        x.Pincode.ToLower().Contains(addressFilterDto.GenericTextFilter)
+                        x.UserName.ToLower().Contains(addressFilterDto.GenericTextFilter.ToLower()) ||
+                        (!string.IsNullOrWhiteSpace(x.AddressName) && x.AddressName.ToLower().Contains(addressFilterDto.GenericTextFilter.ToLower())) ||
+                        x.Line1.ToLower().Contains(addressFilterDto.GenericTextFilter.ToLower()) ||
+                        (!string.IsNullOrWhiteSpace(x.Line2) && x.Line2.ToLower().Contains(addressFilterDto.GenericTextFilter.ToLower())) ||
+                        (!string.IsNullOrWhiteSpace(x.Landmark) && x.Landmark.ToLower().Contains(addressFilterDto.GenericTextFilter.ToLower())) ||
+                        (!string.IsNullOrWhiteSpace(x.Village) && x.Village.ToLower().Contains(addressFilterDto.GenericTextFilter.ToLower())) ||
+                        x.City.ToLower().Contains(addressFilterDto.GenericTextFilter.ToLower()) ||
+                        x.District.ToLower().Contains(addressFilterDto.GenericTextFilter.ToLower()) ||
+                        x.State.ToLower().Contains(addressFilterDto.GenericTextFilter.ToLower()) ||
+                        x.Country.ToLower().Contains(addressFilterDto.GenericTextFilter.ToLower()) ||
+                        x.Pincode.ToLower().Contains(addressFilterDto.GenericTextFilter.ToLower())
                     );
 
         //FieldTextFilterQuery
@@ -197,13 +199,11 @@ public class AddressService : IAddressService
         return await AddressQuery.ToListAsync();
     }
 
-    public async Task AddAddressAsync(AddressDto addressDto)
+    public async Task InsertAddressAsync(AddressDto addressDto)
     {
-        if (!await _userRepo.CheckIsUserIdExistAsync(addressDto.UserId))
+        if (!await _userRepo.IsUserIdExistAsync(addressDto.UserId))
             throw new ApiException(System.Net.HttpStatusCode.NotFound, string.Format(Constants.NotExistExceptionMessage, "User", "Id", addressDto.UserId));
         var addressEntity = _addressMapper.GetEntity(addressDto);
-        await _addressRepo.InsertUserAsync(addressEntity);
+        await _addressRepo.InsertAddressAsync(addressEntity);
     }
-
-
 }

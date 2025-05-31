@@ -21,29 +21,29 @@ namespace API.Controllers
         }
 
         [Authorize]
-        [HttpPost("GetAllRole")]
-        public async Task<ApiResponse> GetRole(RoleFilterDto roleFilterDto)
+        [HttpPost("GetRoles/")]
+        public async Task<ApiResponse> GetRoles(RoleFilterDto roleFilterDto)
         {
             return new ApiResponse(HttpStatusCode.OK, await _roleService.GetRolesAsync(roleFilterDto));
         }
 
         [Authorize]
-        [HttpGet("{id}")]
+        [HttpGet("GetRoleById/{id}")]
         public async Task<ApiResponse> GetRoleById(int id)
         {
             return new ApiResponse(HttpStatusCode.OK, await _roleService.GetRoleByIdAsync(id));
         }
 
         [Authorize]
-        [HttpPost]
-        public async Task<ApiResponse> AddRole(RoleDto roleDto)
+        [HttpPost("InsertRole/")]
+        public async Task<ApiResponse> InsertRole(RoleDto roleDto)
         {
-            await _roleService.AddRoleAsync(roleDto);
+            await _roleService.InsertRoleAsync(roleDto);
             return new ApiResponse(HttpStatusCode.OK);
         }
 
         [Authorize]
-        [HttpPut("{id}")]
+        [HttpPut("UpadateRole/{id}")]
         public async Task<ApiResponse> UpadateRole(int id,RoleDto roleDto)
         {
             await _roleService.UpadateRoleAsync(id,roleDto);
@@ -51,11 +51,18 @@ namespace API.Controllers
         }
 
         [Authorize]
-        [HttpDelete("{id}")]
+        [HttpDelete("DeleteRole/{id}")]
         public async Task<ApiResponse> DeleteRole(int id)
         {
             await _roleService.DeleteRoleAsync(id);
             return new ApiResponse(HttpStatusCode.OK);
+        }
+
+        [Authorize]
+        [HttpGet("IsRoleExistByName/{name}")]
+        public async Task<ApiResponse> IsRoleExistByName(string name)
+        {
+            return new ApiResponse(HttpStatusCode.OK, await _roleService.IsRoleExistByNameAsync(name));
         }
     }
 }

@@ -41,12 +41,12 @@ public class UserService : IUserService
 
     public async Task<List<UserDto>> GetUsersAsync(UserFilterDto userFilterDto)
     {
-        var userQuery = _userRepo.GetQueyable();
-        var roleQuery = _roleRepo.GetQueyable();
+        var userQueryable = _userRepo.GetQueyable();
+        var roleQueyable = _roleRepo.GetQueyable();
 
-        IQueryable<UserDto> UserQuery = userQuery
+        IQueryable<UserDto> UserQuery = userQueryable
             .Join(
-                roleQuery,
+                roleQueyable,
                 user => user.RoleId,
                 role => role.Id,
                 (user, role) => new
@@ -76,10 +76,10 @@ public class UserService : IUserService
         //GenericTextFilterQuery
         if (!string.IsNullOrWhiteSpace(userFilterDto.GenericTextFilter))
             UserQuery = UserQuery.Where(x =>
-                        x.Name.ToLower().Contains(userFilterDto.GenericTextFilter) ||
-                        x.RoleName.ToLower().Contains(userFilterDto.GenericTextFilter) ||
-                        x.Email.ToLower().Contains(userFilterDto.GenericTextFilter) ||
-                        x.PhNo.ToLower().Contains(userFilterDto.GenericTextFilter)
+                        x.Name.ToLower().Contains(userFilterDto.GenericTextFilter.ToLower()) ||
+                        x.RoleName.ToLower().Contains(userFilterDto.GenericTextFilter.ToLower()) ||
+                        x.Email.ToLower().Contains(userFilterDto.GenericTextFilter.ToLower()) ||
+                        x.PhNo.ToLower().Contains(userFilterDto.GenericTextFilter.ToLower())
                     );
 
         //FieldTextFilterQuery
@@ -107,8 +107,6 @@ public class UserService : IUserService
         //Pagination
         if (userFilterDto.IsPagination)
             UserQuery = UserQuery.Skip((userFilterDto.PageNo - 1) * userFilterDto.PageSize).Take(userFilterDto.PageSize);
-
-        var Query = UserQuery.ToQueryString();
 
         return await UserQuery.ToListAsync();
 
@@ -145,38 +143,98 @@ public class UserService : IUserService
                 PhNo = x.PhNo,
                 RoleName = x.RoleName,
             }).FirstOrDefaultAsync();
+
         if (user == null)
             throw new ApiException(HttpStatusCode.NotFound, string.Format(Constants.NotExistExceptionMessage, "User", "Id", id));
+
         return user;
     }
-    public async Task<string> AddUserAsync(UserDto userDto)
+    public async Task<List<UserDto>> GetUserByRoleIdAsync(int roleId,UserFilterDto userFilterDto)
     {
-        if (!await _roleRepo.CheckIsRoleIdExistAsync(userDto.RoleId))
-            throw new ApiException(System.Net.HttpStatusCode.NotFound, $"Role Id {userDto.RoleId} is not exist");
+        if (!await _roleRepo.IsRoleIdExistAsync(roleId))
+            throw new ApiException(HttpStatusCode.NotFound, string.Format(Constants.NotExistExceptionMessage, "Role", "Id", roleId));
+
+        var userQueryable = _userRepo.GetQueyable();
+        var roleQueyable = _roleRepo.GetQueyable();
+
+        IQueryable<UserDto> UserQuery = userQueryable
+            .Join(
+                roleQueyable,
+                user => user.RoleId,
+                role => role.Id,
+                (user, role) => new
+                {
+                    user.Id,
+                    user.Name,
+                    RoleId = role.Id,
+                    user.Email,
+                    user.PhNo,
+                    role.RoleName,
+                    RoleDeleted = role.IsDeleted,
+                    user.IsDeleted
+                }
+            )
+            .Where(x => x.RoleId == roleId && !x.IsDeleted && !x.RoleDeleted)
+            .Select(x => new UserDto()
+            {
+                Id = x.Id,
+                Name = x.Name,
+                RoleId = x.RoleId,
+                Email = x.Email,
+                PhNo = x.PhNo,
+                RoleName = x.RoleName,
+            });
+
+
+        //GenericTextFilterQuery
+        if (!string.IsNullOrWhiteSpace(userFilterDto.GenericTextFilter))
+            UserQuery = UserQuery.Where(x =>
+                        x.Name.ToLower().Contains(userFilterDto.GenericTextFilter.ToLower()) ||
+                        x.RoleName.ToLower().Contains(userFilterDto.GenericTextFilter.ToLower()) ||
+                        x.Email.ToLower().Contains(userFilterDto.GenericTextFilter.ToLower()) ||
+                        x.PhNo.ToLower().Contains(userFilterDto.GenericTextFilter.ToLower())
+                    );
+
+        //FieldTextFilterQuery
+        if (!string.IsNullOrWhiteSpace(userFilterDto.RoleNameFilterText))
+            UserQuery = UserQuery.Where(x => x.RoleName.ToLower().Contains(userFilterDto.RoleNameFilterText.ToLower()));
+        if (!string.IsNullOrWhiteSpace(userFilterDto.EmailFilterText))
+            UserQuery = UserQuery.Where(x => x.Email.ToLower().Contains(userFilterDto.EmailFilterText.ToLower()));
+        if (!string.IsNullOrWhiteSpace(userFilterDto.PhNoFilterText))
+            UserQuery = UserQuery.Where(x => x.PhNo.ToLower().Contains(userFilterDto.PhNoFilterText.ToLower()));
+        if (!string.IsNullOrWhiteSpace(userFilterDto.NameFilterText))
+            UserQuery = UserQuery.Where(x => x.Name.ToLower().Contains(userFilterDto.NameFilterText.ToLower()));
+
+        //OrderByQuery
+        if (!string.IsNullOrWhiteSpace(userFilterDto.OrderByField) && userFilterDto.OrderByField.ToLower().Equals(Constants.OrderByNameValue, StringComparison.OrdinalIgnoreCase))
+            UserQuery = UserQuery.OrderBy(x => x.Name);
+        else if (!string.IsNullOrWhiteSpace(userFilterDto.OrderByField) && userFilterDto.OrderByField.ToLower().Equals(Constants.OrderByRoleNameValue, StringComparison.OrdinalIgnoreCase))
+            UserQuery = UserQuery.OrderBy(x => x.RoleName);
+        else if (!string.IsNullOrWhiteSpace(userFilterDto.OrderByField) && userFilterDto.OrderByField.ToLower().Equals(Constants.OrderByEmailValue, StringComparison.OrdinalIgnoreCase))
+            UserQuery = UserQuery.OrderBy(x => x.Email);
+        else if (!string.IsNullOrWhiteSpace(userFilterDto.OrderByField) && userFilterDto.OrderByField.ToLower().Equals(Constants.OrderByPhoneNoValue, StringComparison.OrdinalIgnoreCase))
+            UserQuery = UserQuery.OrderBy(x => x.PhNo);
+        else
+            UserQuery = UserQuery.OrderBy(x => x.Id);
+
+        //Pagination
+        if (userFilterDto.IsPagination)
+            UserQuery = UserQuery.Skip((userFilterDto.PageNo - 1) * userFilterDto.PageSize).Take(userFilterDto.PageSize);
+
+        return await UserQuery.ToListAsync();
+    }
+
+    public async Task<string> InsertUserAsync(UserDto userDto)
+    {
+        if (!await _roleRepo.IsRoleIdExistAsync(userDto.RoleId))
+            throw new ApiException(HttpStatusCode.NotFound, string.Format(Constants.NotExistExceptionMessage, "Role", "Id", userDto.RoleId));
         var userEntity = _userMapper.GetEntity(userDto);
         await _userRepo.InsertUserAsync(userEntity);
         return userEntity.GenerateTokenAsync(_jwtConfig);
     }
-
-    public async Task<bool> CheckUserEmailExistOrNotAsync(string email)
-    {
-        return await _userRepo.CheckUserEmailExistOrNotAsync(email);
-    }
-
-    public async Task<bool> CheckUserPhoneNoExistOrNotAsync(string phoneNo)
-    {
-        return await _userRepo.CheckUserPhoneNoExistOrNotAsync(phoneNo);
-    }
-
-    public async Task DeleteUserAsync(int id)
-    {
-        var user = await _userRepo.GetUserByIdAsync(id);
-        user.IsDeleted = true;
-        await _userRepo.UpdateUserAsync(user);
-    }
     public async Task UpadateUserAsync(int id, UserDto userDto)
     {
-        if (!await _roleRepo.CheckIsRoleIdExistAsync(userDto.RoleId))
+        if (!await _roleRepo.IsRoleIdExistAsync(userDto.RoleId))
             throw new ApiException(HttpStatusCode.NotFound, string.Format(Constants.NotExistExceptionMessage,"Role", "Id" , userDto.RoleId));
         var user = await _userRepo.GetUserByIdAsync(id);
         user.RoleId = userDto.RoleId;
@@ -185,6 +243,14 @@ public class UserService : IUserService
         user.Name = userDto.Name;
         await _userRepo.UpdateUserAsync(user);
     }
+
+    public async Task DeleteUserAsync(int id)
+    {
+        var user = await _userRepo.GetUserByIdAsync(id);
+        user.IsDeleted = true;
+        await _userRepo.UpdateUserAsync(user);
+    }
+
 
     public async Task<string> AuthenticateUserAndGetToken(AuthenticationDto authDto)
     {
@@ -196,5 +262,15 @@ public class UserService : IUserService
         if (user == null)
             throw new ApiException(HttpStatusCode.NotFound,string.Format(Constants.UnauthorizedExceptionMessage));
         return user.GenerateTokenAsync(_jwtConfig);
+    }
+
+    public async Task<bool> IsUserEmailExistAsync(string email)
+    {
+        return await _userRepo.IsUserEmailExistAsync(email);
+    }
+
+    public async Task<bool> IsUserPhoneNumberExistAsync(string phoneNo)
+    {
+        return await _userRepo.IsUserPhoneNumberExistAsync(phoneNo);
     }
 }

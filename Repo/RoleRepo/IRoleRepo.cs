@@ -7,8 +7,8 @@ namespace Repo;
 public interface IRoleRepo : IBaseRepo<Role>
 {
     Task<Role> GetRoleByIdAsync(int id);
-    Task<bool> CheckIsRoleExistByNameAsync(string name);
+    Task<bool> IsRoleExistByNameAsync(string name);
     Task InsertRoleAsync(Role role);
     Task UpdateRoleAsync(Role role);
-    Task<bool> CheckIsRoleIdExistAsync(int id);
+    Task<bool> IsRoleIdExistAsync(int id);
 }

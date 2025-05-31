@@ -10,7 +10,5 @@ namespace Repo;
 
 public interface IAddressRepo : IBaseRepo<Address>
 {
-    Task<List<Address>> GetAddressByUserIdAsync(int UserId,PaginationDto paginationDto);
-    Task<Address> GetAddressByIdAsync(int id);
-    Task InsertUserAsync(Address address);
+    Task InsertAddressAsync(Address address);
 }

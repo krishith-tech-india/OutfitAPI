@@ -133,9 +133,9 @@ app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Version V1");
     c.RoutePrefix = "swagger";
+    //c.InjectJavascript("document.addEventListener('DOMContentLoaded', function() { let tokenInput = document.querySelector('input[type=\"text\"]'); if (tokenInput) { tokenInput.value = \"abcdef12345\"; }}); console.log(\"HAHAHA\")");
 });
 
-//}
 
 app.UseCors(MyAllowSpecificOrigins);
 

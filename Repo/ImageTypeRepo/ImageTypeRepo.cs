@@ -30,22 +30,9 @@ public class ImageTypeRepo : BaseRepo<ImageType>, IImageTypeRepo
         return imageTypes;
     }
 
-    public async Task<bool> CheckIsImageTypeExistByNameAsync(string name)
-    {
-        return await AnyAsync(x =>  !x.IsDeleted && x.Name.ToLower().Equals(name.ToLower()));
-    }
-
-    private async Task CheckIsImageTypeDataValidOrNotAsync(ImageType imageType)
-    {
-        if (string.IsNullOrWhiteSpace(imageType.Name))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Image Type", "Name"));
-        if(await AnyAsync(x => !x.IsDeleted && !x.Id.Equals(imageType.Id) && x.Name.ToLower().Equals(imageType.Name.ToLower())))
-            throw new ApiException(System.Net.HttpStatusCode.Conflict,string.Format(Constants.AleadyExistExceptionMessage, "Image Type" , "Name" , imageType.Name));
-    }
-
     public async Task InsertImageTypeAsync(ImageType imageType)
     {
-        await CheckIsImageTypeDataValidOrNotAsync(imageType);
+        await IsImageTypeDataValidAsync(imageType);
         if (string.IsNullOrWhiteSpace(imageType.Description))
             imageType.Description = null;
         imageType.AddedOn = DateTime.Now;
@@ -56,12 +43,25 @@ public class ImageTypeRepo : BaseRepo<ImageType>, IImageTypeRepo
 
     public async Task UpdateImageTypeAsync(ImageType imageType)
     {
-        await CheckIsImageTypeDataValidOrNotAsync(imageType);
+        await IsImageTypeDataValidAsync(imageType);
         if (string.IsNullOrWhiteSpace(imageType.Description))
             imageType.Description = null;
         imageType.LastUpdatedOn = DateTime.Now;
         imageType.LastUpdatedBy = _userContext.loggedInUser.Id;
         Update(imageType);
         await SaveChangesAsync();
+    }
+
+    public async Task<bool> IsImageTypeExistByNameAsync(string name)
+    {
+        return await AnyAsync(x =>  !x.IsDeleted && x.Name.ToLower().Equals(name.ToLower()));
+    }
+
+    private async Task IsImageTypeDataValidAsync(ImageType imageType)
+    {
+        if (string.IsNullOrWhiteSpace(imageType.Name))
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Image Type", "Name"));
+        if(await AnyAsync(x => !x.IsDeleted && !x.Id.Equals(imageType.Id) && x.Name.ToLower().Equals(imageType.Name.ToLower())))
+            throw new ApiException(System.Net.HttpStatusCode.Conflict,string.Format(Constants.AleadyExistExceptionMessage, "Image Type" , "Name" , imageType.Name));
     }
 }

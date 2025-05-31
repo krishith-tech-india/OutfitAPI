@@ -11,5 +11,4 @@ namespace Mapper;
 public interface IAddressMapper
 {
     Address GetEntity(AddressDto addressDto);
-    AddressDto GetAddressDto(Address address);
 }

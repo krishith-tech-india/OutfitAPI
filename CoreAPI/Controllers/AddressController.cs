@@ -19,24 +19,24 @@ namespace API.Controllers
         }
 
         [Authorize]
-        [HttpGet("{id}")]
+        [HttpGet("GetAddressById/{id}")]
         public async Task<ApiResponse> GetAddressById(int id)
         {
             return new ApiResponse(HttpStatusCode.OK , await _addressService.GetAddressByIdAsync(id));
         }
 
         [Authorize]
-        [HttpPost("UserId/{userId}")]
-        public async Task<ApiResponse> GetAddressByUserId([FromRoute]int userId,[FromBody] AddressFilterDto addressFilterDto)
+        [HttpPost("GetAddressByUserId/")]
+        public async Task<ApiResponse> GetAddressByUserId(int userId,[FromBody] AddressFilterDto addressFilterDto)
         {
             return new ApiResponse(HttpStatusCode.OK , await _addressService.GetAddressByUserIdAsync(userId,addressFilterDto));
         }
 
         [Authorize]
-        [HttpPost]
-        public async Task<ApiResponse> AddAddress([FromBody]AddressDto addressDto)
+        [HttpPost("InsertAddress/")]
+        public async Task<ApiResponse> InsertAddress([FromBody]AddressDto addressDto)
         {
-            await _addressService.AddAddressAsync(addressDto);
+            await _addressService.InsertAddressAsync(addressDto);
             return new ApiResponse(HttpStatusCode.OK);
         }
     }

@@ -11,5 +11,5 @@ public interface IAddressService
 {
     Task<AddressDto> GetAddressByIdAsync(int id);
     Task<List<AddressDto>> GetAddressByUserIdAsync(int UserId, AddressFilterDto addressFilterDto);
-    Task AddAddressAsync(AddressDto addressDto);
+    Task InsertAddressAsync(AddressDto addressDto);
 }

@@ -10,8 +10,8 @@ namespace Service;
 
 public interface IOrderStatusService
 {
-    Task<List<OrderStatusDto>> GetAllOrderStatusAsync(OrderStatusFilterDto genericFilterDto);
-    Task<OrderStatusDto> GetOrderStatusByIDAsync(int id);
+    Task<List<OrderStatusDto>> GetOrderStatusAsync(OrderStatusFilterDto genericFilterDto);
+    Task<OrderStatusDto> GetOrderStatusByIdAsync(int id);
     Task InsertOrderStatusAsync(OrderStatusDto orderStatusDto);
     Task UpdateOrderStatusAsync(int id, OrderStatusDto orderStatusDto);
     Task DeleteOrderStatusAsync(int id);

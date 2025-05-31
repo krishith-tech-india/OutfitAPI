@@ -20,29 +20,29 @@ namespace API.Controllers
         }
 
         [Authorize]
-        [HttpPost("GetAll")]
-        public async Task<ApiResponse> GetAllOrderStatus([FromBody] OrderStatusFilterDto orderStatusFilterDto)
+        [HttpPost("GetOrderStatus/")]
+        public async Task<ApiResponse> GetOrderStatus([FromBody] OrderStatusFilterDto orderStatusFilterDto)
         {
-            return new ApiResponse(HttpStatusCode.OK, await _orderStatusService.GetAllOrderStatusAsync(orderStatusFilterDto));
+            return new ApiResponse(HttpStatusCode.OK, await _orderStatusService.GetOrderStatusAsync(orderStatusFilterDto));
         }
 
         [Authorize]
-        [HttpGet("{Id}")]
+        [HttpGet("GetOrderStatusByID/{Id}")]
         public async Task<ApiResponse> GetOrderStatusByID(int Id)
         {
-            return new ApiResponse(HttpStatusCode.OK, await _orderStatusService.GetOrderStatusByIDAsync(Id));
+            return new ApiResponse(HttpStatusCode.OK, await _orderStatusService.GetOrderStatusByIdAsync(Id));
         }
 
         [Authorize]
-        [HttpPost]
-        public async Task<ApiResponse> AddOrderStatus([FromBody] OrderStatusDto orderStatusDto)
+        [HttpPost("InsertOrderStatus/")]
+        public async Task<ApiResponse> InsertOrderStatus([FromBody] OrderStatusDto orderStatusDto)
         {
             await _orderStatusService.InsertOrderStatusAsync(orderStatusDto);
             return new ApiResponse(HttpStatusCode.OK);
         }
 
         [Authorize]
-        [HttpPut("{Id}")]
+        [HttpPut("UpdateOrderStatus/{Id}")]
         public async Task<ApiResponse> UpdateOrderStatus(int Id,[FromBody] OrderStatusDto orderStatusDto)
         {
             await _orderStatusService.UpdateOrderStatusAsync(Id, orderStatusDto);
@@ -50,7 +50,7 @@ namespace API.Controllers
         }
 
         [Authorize]
-        [HttpDelete("{Id}")]
+        [HttpDelete("DeleteOrderStatus/{Id}")]
         public async Task<ApiResponse> DeleteOrderStatus(int Id)
         {
             await _orderStatusService.DeleteOrderStatusAsync(Id);

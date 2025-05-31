@@ -12,6 +12,11 @@ namespace Repo
             service.AddScoped<IAddressRepo, AddressRepo>();
             service.AddScoped<IImageTypeRepo, ImageTypeRepo>();
             service.AddScoped<IOrderStatusRepo, OrderStatusRepo>();
+            service.AddScoped<IProductCategoryRepo, ProductCategoryRepo>();
+            service.AddScoped<IProductGroupRepo, ProductGroupRepo>();
+            service.AddScoped<IProductRepo, ProductRepo>();
+            service.AddScoped<IReviewRepo, ReviewRepo>();
+            service.AddScoped<ICartRepo, CartRepo>();
         }
     }
 }

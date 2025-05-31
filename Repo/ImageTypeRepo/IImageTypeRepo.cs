@@ -11,7 +11,7 @@ namespace Repo;
 public interface IImageTypeRepo : IBaseRepo<ImageType>
 {
     Task<ImageType> GetImageTypeByIdAsync(int id);
-    Task<bool> CheckIsImageTypeExistByNameAsync(string name);
+    Task<bool> IsImageTypeExistByNameAsync(string name);
     Task InsertImageTypeAsync(ImageType imageType);
     Task UpdateImageTypeAsync(ImageType imageType);
 }

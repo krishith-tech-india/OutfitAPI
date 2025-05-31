@@ -14,5 +14,5 @@ public interface IOrderStatusRepo : IBaseRepo<OrderStatus>
     Task<OrderStatus> GetOrderStatusByIdAsync(int id);
     Task InsertOrderStatusAsync(OrderStatus orderStatus);
     Task UpdateOrderStatusAsync(OrderStatus orderStatus);
-    Task<bool> CheckIsOrderStatusExistByNameAsync(string Name);
+    Task<bool> IsOrderStatusExistByNameAsync(string Name);
 }

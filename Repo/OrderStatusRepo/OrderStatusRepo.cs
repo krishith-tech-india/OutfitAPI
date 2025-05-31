@@ -33,7 +33,7 @@ public class OrderStatusRepo : BaseRepo<OrderStatus>, IOrderStatusRepo
 
     public async Task InsertOrderStatusAsync(OrderStatus orderStatus)
     {
-        await CheckIsOrderStatusDataValidOrNotAsync(orderStatus);
+        await IsOrderStatusDataValidAsync(orderStatus);
         if (string.IsNullOrWhiteSpace(orderStatus.Description))
             orderStatus.Description = null;
         orderStatus.AddedOn = DateTime.Now;
@@ -44,7 +44,7 @@ public class OrderStatusRepo : BaseRepo<OrderStatus>, IOrderStatusRepo
 
     public async Task UpdateOrderStatusAsync(OrderStatus orderStatus)
     {
-        await CheckIsOrderStatusDataValidOrNotAsync(orderStatus);
+        await IsOrderStatusDataValidAsync(orderStatus);
         if (string.IsNullOrWhiteSpace(orderStatus.Description))
             orderStatus.Description = null;
         orderStatus.LastUpdatedOn = DateTime.Now;
@@ -53,12 +53,12 @@ public class OrderStatusRepo : BaseRepo<OrderStatus>, IOrderStatusRepo
         await SaveChangesAsync();
     }
 
-    public async Task<bool> CheckIsOrderStatusExistByNameAsync(string Name)
+    public async Task<bool> IsOrderStatusExistByNameAsync(string Name)
     {
         return await AnyAsync(x => !x.IsDeleted && x.Name.ToLower().Equals(Name.ToLower()));
     }
 
-    private async Task CheckIsOrderStatusDataValidOrNotAsync(OrderStatus orderStatus)
+    private async Task IsOrderStatusDataValidAsync(OrderStatus orderStatus)
     {
         if (string.IsNullOrWhiteSpace(orderStatus.Name))
             throw new ApiException(System.Net.HttpStatusCode.BadRequest,string.Format(Constants.FieldrequiredExceptionMessage, "Order Status", "Name"));

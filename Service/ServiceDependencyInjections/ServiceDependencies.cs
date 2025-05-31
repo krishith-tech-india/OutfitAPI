@@ -11,6 +11,11 @@ namespace Service
             service.AddScoped<IAddressService, AddressService>();
             service.AddScoped<IImageTypeService, ImageTypeService>();
             service.AddScoped<IOrderStatusService, OrderStatusService>();
+            service.AddScoped<IProductCategoryService, ProductCategoryService>();
+            service.AddScoped <IProductGroupService, ProductGroupService>();
+            service.AddScoped <IProductService, ProductService>();
+            service.AddScoped <IReviewService, ReviewService>();
+            service.AddScoped <ICartService, CartService>();
         }
     }
 }

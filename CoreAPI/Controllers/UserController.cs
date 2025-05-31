@@ -18,27 +18,34 @@ namespace API.Controllers
         }
 
         [Authorize]
-        [HttpPost("GetAllUser")]
-        public async Task<ApiResponse> GetaAllUser(UserFilterDto userFilterDto)
+        [HttpPost("GetUsers/")]
+        public async Task<ApiResponse> GetUsers(UserFilterDto userFilterDto)
         {
             return new ApiResponse(HttpStatusCode.OK, await _userService.GetUsersAsync(userFilterDto));
         }
 
         [Authorize]
-        [HttpGet("{id}")]
+        [HttpGet("GetUserById/{id}")]
         public async Task<ApiResponse> GetUserById(int id)
         {
             return new ApiResponse(HttpStatusCode.OK, await _userService.GetUserByIdAsync(id));
         }
 
-        [HttpPost]
-        public async Task<ApiResponse> AddUser([FromBody] UserDto userDto)
+        [Authorize]
+        [HttpPost("GetUserByRoleId/")]
+        public async Task<ApiResponse> GetUserByRoleId(int roleId, [FromBody] UserFilterDto userFilterDto)
         {
-            return new ApiResponse(HttpStatusCode.OK,await _userService.AddUserAsync(userDto));
+            return new ApiResponse(HttpStatusCode.OK, await _userService.GetUserByRoleIdAsync(roleId, userFilterDto));
+        }
+
+        [HttpPost("InsertUser/")]
+        public async Task<ApiResponse> InsertUser([FromBody] UserDto userDto)
+        {
+            return new ApiResponse(HttpStatusCode.OK,await _userService.InsertUserAsync(userDto));
         }
 
         [Authorize]
-        [HttpPut("{id}")]
+        [HttpPut("UpadateUser/{id}")]
         public async Task<ApiResponse> UpadateUser(int id, UserDto userDto)
         {
             await _userService.UpadateUserAsync(id, userDto);
@@ -46,15 +53,15 @@ namespace API.Controllers
         }
 
         [Authorize]
-        [HttpDelete("{id}")]
+        [HttpDelete("DeleteUser/{id}")]
         public async Task<ApiResponse> DeleteUser(int id)
         {
             await _userService.DeleteUserAsync(id);
             return new ApiResponse(HttpStatusCode.OK);
         }
 
-        [HttpPost("authenticate")]
-        public async Task<ApiResponse> LoginUser([FromBody] AuthenticationDto authenticationDto)
+        [HttpPost("AuthorizeUser/")]
+        public async Task<ApiResponse> AuthorizeUser([FromBody] AuthenticationDto authenticationDto)
         {
             string Token = await _userService.AuthenticateUserAndGetToken(authenticationDto);
             return new ApiResponse(HttpStatusCode.OK,Token);
@@ -62,17 +69,17 @@ namespace API.Controllers
         }
 
         [Authorize]
-        [HttpGet("UserPhoneNoExist/{phoneNo}")] 
-        public async Task<ApiResponse> IsUserPhoneNoExist(string phoneNo)
+        [HttpGet("IsUserPhoneNumberExistAsync/{phoneNumber}")]
+        public async Task<ApiResponse> IsUserPhoneNumberExist(string phoneNumber)
         {
-            return new ApiResponse(HttpStatusCode.OK, await _userService.CheckUserPhoneNoExistOrNotAsync(phoneNo));
+            return new ApiResponse(HttpStatusCode.OK, await _userService.IsUserPhoneNumberExistAsync(phoneNumber));
         }
 
         [Authorize]
-        [HttpGet("UserEmailExist/{email}")]
+        [HttpGet("IsUserEmailExistAsync/{email}")]
         public async Task<ApiResponse> IsUserEmailExist(string email)
         {
-            return new ApiResponse(HttpStatusCode.OK, await _userService.CheckUserEmailExistOrNotAsync(email));
+            return new ApiResponse(HttpStatusCode.OK, await _userService.IsUserEmailExistAsync(email));
         }
     }
 }

@@ -21,29 +21,29 @@ namespace API.Controllers
         }
 
         [Authorize]
-        [HttpPost("GetAllImageType/")]
-        public async Task<ApiResponse> GetAllImageType(ImageTypeFilterDto imageTypeFilterDto)
+        [HttpPost("GetImageTypes/")]
+        public async Task<ApiResponse> GetImageTypes(ImageTypeFilterDto imageTypeFilterDto)
         {
-            return new ApiResponse(HttpStatusCode.OK, await _imageTypeService.GetImageTypeAsync(imageTypeFilterDto));
+            return new ApiResponse(HttpStatusCode.OK, await _imageTypeService.GetImageTypesAsync(imageTypeFilterDto));
         }
 
         [Authorize]
-        [HttpGet("{id}")]
+        [HttpGet("GetImageTypeById/{id}")]
         public async Task<ApiResponse> GetImageTypeById(int id)
         {
             return new ApiResponse(HttpStatusCode.OK, await _imageTypeService.GetImageTypeByIdAsync(id));
         }
 
         [Authorize]
-        [HttpPost]
-        public async Task<ApiResponse> AddImageType([FromBody] ImageTypeDto imageTypeDto)
+        [HttpPost("InsertImageType/")]
+        public async Task<ApiResponse> InsertImageType([FromBody] ImageTypeDto imageTypeDto)
         {
-            await _imageTypeService.AddImageType(imageTypeDto);
+            await _imageTypeService.InsertImageTypeAsync(imageTypeDto);
             return new ApiResponse(HttpStatusCode.OK);
         }
 
         [Authorize]
-        [HttpPut("{id}")]
+        [HttpPut("UpdateImageType/{id}")]
         public async Task<ApiResponse> UpdateImageType(int id, [FromBody] ImageTypeDto imageTypeDto)
         {
             await _imageTypeService.UpadateImageTypeAsync(id, imageTypeDto);
@@ -51,7 +51,7 @@ namespace API.Controllers
         }
 
         [Authorize]
-        [HttpDelete("{id}")]
+        [HttpDelete("DeleteImageType/{id}")]
         public async Task<ApiResponse> DeleteImageType(int id)
         {
             await _imageTypeService.DeleteImageTypeAsync(id);
@@ -59,7 +59,7 @@ namespace API.Controllers
         }
 
         [Authorize]
-        [HttpGet("ImageTypeExistByName/{Name}")]
+        [HttpGet("IsImageTypeExistByName/{Name}")]
         public async Task<ApiResponse> IsImageTypeExistByName(string Name)
         {
             return new ApiResponse(HttpStatusCode.OK, await _imageTypeService.IsImageTypeExistByNameAsync(Name));

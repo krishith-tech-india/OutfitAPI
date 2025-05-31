@@ -59,6 +59,7 @@ namespace Repo
             return Expression.Lambda<T>(merge(first.Body, secondBody), first.Parameters);
         }
 
+
         private class ParameterRebinder : ExpressionVisitor
         {
             readonly Dictionary<ParameterExpression, ParameterExpression> map;

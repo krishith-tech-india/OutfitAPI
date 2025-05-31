@@ -27,6 +27,7 @@ public class RoleService : IRoleService
         _roleMapper = roleMapper;
         _userRepo = userRepo;
     }
+
     public async Task<List<RoleDto>> GetRolesAsync(RoleFilterDto roleFilterDto)
     {
         var userQueriable = _userRepo.GetQueyable();
@@ -57,8 +58,8 @@ public class RoleService : IRoleService
         //GenericTextFilterQuery
         if (!string.IsNullOrWhiteSpace(roleFilterDto.GenericTextFilter))
             RoleQuery = RoleQuery.Where(x =>
-                        x.Name.ToLower().Contains(roleFilterDto.GenericTextFilter) ||
-                        (!string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(roleFilterDto.GenericTextFilter))
+                        x.Name.ToLower().Contains(roleFilterDto.GenericTextFilter.ToLower()) ||
+                        (!string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(roleFilterDto.GenericTextFilter.ToLower()))
                     );
 
         //FieldTextFilterQuery
@@ -66,8 +67,6 @@ public class RoleService : IRoleService
             RoleQuery = RoleQuery.Where(x => x.Name.ToLower().Contains(roleFilterDto.NameFilterText.ToLower()));
         if (!string.IsNullOrWhiteSpace(roleFilterDto.DescriptionFilterText))
             RoleQuery = RoleQuery.Where(x => !string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(roleFilterDto.DescriptionFilterText.ToLower()));
-
-
 
         //OrderByQuery
         if (!string.IsNullOrWhiteSpace(roleFilterDto.OrderByField) && roleFilterDto.OrderByField.ToLower().Equals(Constants.OrderByNameValue, StringComparison.OrdinalIgnoreCase))
@@ -83,23 +82,46 @@ public class RoleService : IRoleService
 
         return await RoleQuery.ToListAsync();
     }
+
     public async Task<RoleDto> GetRoleByIdAsync(int id)
     {
-        return _roleMapper.GetRoleDto(await _roleRepo.GetRoleByIdAsync(id));
+        var userQueriable = _userRepo.GetQueyable();
+        var roleQueriable = _roleRepo.GetQueyable();
+
+        var RoleQuery = await roleQueriable
+            .GroupJoin(
+                userQueriable,
+                role => role.Id,
+                user => user.RoleId,
+                (role, userList) => new
+                {
+                    role.Id,
+                    role.RoleName,
+                    role.RoleDesc,
+                    role.IsDeleted,
+                    UserCount = userList.Where(x => !x.IsDeleted).Count()
+                }
+            ).Where(x => x.Id == id && !x.IsDeleted)
+            .Select(x => new RoleDto
+            {
+                Id = x.Id,
+                Name = x.RoleName,
+                Description = x.RoleDesc,
+                UserCount = x.UserCount
+            }).FirstOrDefaultAsync();
+
+        if (RoleQuery == null)
+            throw new ApiException(System.Net.HttpStatusCode.NotFound, string.Format(Constants.NotExistExceptionMessage, "Role", "Id", id));
+
+        return RoleQuery;
     }
-    public async Task AddRoleAsync(RoleDto roleDto)
+
+    public async Task InsertRoleAsync(RoleDto roleDto)
     {
         var roleEntity = _roleMapper.GetEntity(roleDto);
         await _roleRepo.InsertRoleAsync(roleEntity);
     }
-    public async Task DeleteRoleAsync(int id)
-    {
-        if (await _userRepo.CheckUserExistUnderRoleIdAsync(id))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest,string.Format(Constants.DependentFindExceptionMessage, "Role Id"));
-        var role = await _roleRepo.GetRoleByIdAsync(id);
-        role.IsDeleted = true;
-        await _roleRepo.UpdateRoleAsync(role);
-    }
+
     public async Task UpadateRoleAsync(int id, RoleDto roleDto)
     {
         var role = await _roleRepo.GetRoleByIdAsync(id);
@@ -108,4 +130,17 @@ public class RoleService : IRoleService
         await _roleRepo.UpdateRoleAsync(role);
     }
 
+    public async Task DeleteRoleAsync(int id)
+    {
+        if (await _userRepo.IsUserExistUnderRoleIdAsync(id))
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest,string.Format(Constants.DependentFindExceptionMessage, "Role Id"));
+        var role = await _roleRepo.GetRoleByIdAsync(id);
+        role.IsDeleted = true;
+        await _roleRepo.UpdateRoleAsync(role);
+    }
+
+    public async Task<bool> IsRoleExistByNameAsync(string Name)
+    {
+        return await _roleRepo.IsRoleExistByNameAsync(Name);
+    }
 }
