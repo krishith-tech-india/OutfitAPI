@@ -48,17 +48,15 @@ public class ImageTypeService : IImageTypeService
         imageTypeQuery = imageTypeQuery.Where(imageTypeFilter);
 
         //OrderByQuery
-
         Expression<Func<ImageType, object>> OrderByExpression;
-
-        if (!string.IsNullOrWhiteSpace(imageTypeFilterDto.OrderByField) && imageTypeFilterDto.OrderByField.ToLower().Equals(Constants.OrderByNameValue, StringComparison.OrdinalIgnoreCase))
+        if (!string.IsNullOrWhiteSpace(imageTypeFilterDto.OrderByField) && imageTypeFilterDto.OrderByField.Equals(Constants.OrderByNameValue, StringComparison.OrdinalIgnoreCase))
             OrderByExpression = imageType => imageType.Name ?? "";
-        else if (!string.IsNullOrWhiteSpace(imageTypeFilterDto.OrderByField) && imageTypeFilterDto.OrderByField.ToLower().Equals(Constants.OrderByDescriptionValue, StringComparison.OrdinalIgnoreCase))
+        else if (!string.IsNullOrWhiteSpace(imageTypeFilterDto.OrderByField) && imageTypeFilterDto.OrderByField.Equals(Constants.OrderByDescriptionValue, StringComparison.OrdinalIgnoreCase))
             OrderByExpression = imageType => imageType.Description ?? "";
         else
             OrderByExpression = imageType => imageType.Id;
 
-        imageTypeQuery = 
+        imageTypeQuery =
             imageTypeFilterDto.OrderByEnumValue == null || imageTypeFilterDto.OrderByEnumValue.Equals(OrderByTypeEnum.Asc)
             ? imageTypeQuery.OrderBy(OrderByExpression)
             : imageTypeQuery.OrderByDescending(OrderByExpression);
@@ -81,7 +79,7 @@ public class ImageTypeService : IImageTypeService
         await _imageTypeRepo.InsertImageTypeAsync(ImageTypeEntity);
     }
 
-    public async Task UpadateImageTypeAsync(int id,ImageTypeDto imageTypeDto)
+    public async Task UpadateImageTypeAsync(int id, ImageTypeDto imageTypeDto)
     {
         var imageTypes = await _imageTypeRepo.GetImageTypeByIdAsync(id);
         imageTypes.Name = imageTypeDto.Name;
