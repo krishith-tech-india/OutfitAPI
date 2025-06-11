@@ -55,5 +55,7 @@ public class ReviewRepo : BaseRepo<Review>, IReviewRepo
             throw new ApiException(System.Net.HttpStatusCode.Conflict, string.Format(Constants.AleadyExistExceptionMessage, "Review", "Product Id With", "User ID"));
         if (review.Rating <= 0)
             throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Review ", "Rating"));
+        if (review.Rating >= 5)
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.ValidFieldExceptionMessage, "Review"));
     }
 }

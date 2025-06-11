@@ -2,6 +2,7 @@
 using Core.AppSettingConfigs;
 using Data.Models;
 using Dto;
+using Dto.Common;
 using Mapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -64,10 +65,13 @@ public class AddressService : IAddressService
         return address;
     }
 
-    public async Task<List<AddressDto>> GetAddressByUserIdAsync(int userId, AddressFilterDto addressFilterDto)
+    public async Task<PaginatedList<AddressDto>> GetAddressByUserIdAsync(int userId, AddressFilterDto addressFilterDto)
     {
         if (!await _userRepo.IsUserIdExistAsync(userId))
             throw new ApiException(System.Net.HttpStatusCode.NotFound, string.Format(Constants.NotExistExceptionMessage, "User", "Id", userId));
+
+        // create paginated Address List
+        var paginatedAddressList = new PaginatedList<AddressDto>();
 
         //create Predicates
         var addressFilterPredicate = PradicateBuilder.True<Address>();
@@ -114,13 +118,17 @@ public class AddressService : IAddressService
 
         //OrderBy
         addressQuery = ApplyOrderByFilter(addressQuery, addressFilterDto);
+        
+        //FatchTotalCount
+        paginatedAddressList.Count = await addressQuery.CountAsync();
 
         //Pagination
         addressQuery = ApplyPaginationFilter(addressQuery, addressFilterDto);
 
-        var query = addressQuery.ToQueryString();
+        //FatchItems
+        paginatedAddressList.Items = await addressQuery.ToListAsync();
 
-        return await addressQuery.ToListAsync();
+        return paginatedAddressList;
     }
 
     public async Task InsertAddressAsync(AddressDto addressDto)
@@ -187,7 +195,7 @@ public class AddressService : IAddressService
 
     private Expression<Func<User, bool>> ApplyUserFilters(Expression<Func<User, bool>> userFilterPredicate, AddressFilterDto addressFilterDto)
     {
-        //FieldTextFilterQuery
+        //Apply Field Text Filters
         if (!string.IsNullOrWhiteSpace(addressFilterDto.UserNameFilterText))
             userFilterPredicate = userFilterPredicate.And(x => EF.Functions.ILike(x.Name, $"%{addressFilterDto.UserNameFilterText.Trim()}%"));
 

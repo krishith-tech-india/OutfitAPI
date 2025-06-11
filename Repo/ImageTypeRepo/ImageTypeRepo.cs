@@ -57,6 +57,11 @@ public class ImageTypeRepo : BaseRepo<ImageType>, IImageTypeRepo
         return await AnyAsync(x =>  !x.IsDeleted && x.Name.ToLower().Equals(name.ToLower()));
     }
 
+    public async Task<bool> IsImageTypeExistAsync(int id)
+    {
+        return await AnyAsync(x => !x.IsDeleted && x.Id.Equals(id));
+    }
+
     private async Task IsImageTypeDataValidAsync(ImageType imageType)
     {
         if (string.IsNullOrWhiteSpace(imageType.Name))

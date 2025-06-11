@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 namespace Dto;
 
@@ -10,6 +11,7 @@ public class GenericFilterDto : PaginationDto
     public string? OrderByType { get; set; }
     public string? GenericTextFilter { get; set; }
     public string? OrderByField { get; set; }
+    [JsonIgnore]
     public OrderByTypeEnum? OrderByEnumValue { 
         get 
         {

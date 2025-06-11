@@ -10,6 +10,7 @@ public class Constants
 {
     public const string NotExistExceptionMessage = "{0} with {1} {2} does not exist";
     public const string FieldrequiredExceptionMessage = "{0}, {1} is required";
+    public const string ValidFieldExceptionMessage = "Enter Valid Data in {0} Fild";
     public const string AleadyExistExceptionMessage = "{0} {1} {2} is aleady exist";
     public const string AleadyExistExceptionMessageForProduct = "{0} {1} {2} With {3} Color And {4} Size is aleady exist";
     public const string DependentFindExceptionMessage = "Record Can't Delete because There Are Dependent fileds on {0}";

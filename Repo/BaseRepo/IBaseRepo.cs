@@ -6,7 +6,7 @@ namespace Repo
     public interface IBaseRepo<T>
     {
         IDbContextTransaction BeginTransaction();
-        Task CompleTransaction(IDbContextTransaction transaction);
+        Task CommitTransaction(IDbContextTransaction transaction);
         Task<T?> GetByIdAsync(object id);
         IQueryable<T> GetQueyable();
         Task InsertAsync(T entity);

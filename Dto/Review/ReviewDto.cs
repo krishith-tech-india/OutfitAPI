@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Dto;
@@ -13,5 +14,6 @@ public class ReviewDto
     public string? ProductName { get; set; }
     public int Rating { get; set; }
     public string? Review { get; set; }
+    [JsonIgnore]
     public int AddedBy { get; set; }
 }

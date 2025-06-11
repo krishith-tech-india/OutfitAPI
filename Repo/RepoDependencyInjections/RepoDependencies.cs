@@ -17,6 +17,7 @@ namespace Repo
             service.AddScoped<IProductRepo, ProductRepo>();
             service.AddScoped<IReviewRepo, ReviewRepo>();
             service.AddScoped<ICartRepo, CartRepo>();
+            service.AddScoped<IImageRepo, ImageRepo>();
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using Core;
 using Data.Models;
 using Dto;
+using Dto.Common;
 using Dto.OrderStatus;
 using Mapper;
 using Microsoft.EntityFrameworkCore;
@@ -28,48 +29,57 @@ public class ProductCategoryService : IProductCategoryService
         _productCategoryMapper = productCategoryMapper;
     }
 
-    public async Task<List<ProductCategoryDto>> GetProductCategorysAsync(ProductCategoryFilterDto productCategoryFilterDto)
+    public async Task<PaginatedList<ProductCategoryDto>> GetProductCategorysAsync(ProductCategoryFilterDto productCategoryFilterDto)
     {
+        // create paginated Address List
+        var paginatedproductCategoryList = new PaginatedList<ProductCategoryDto>();
 
-        IQueryable<ProductCategory> productCategoryQuery = _productCategoryRepo.GetQueyable();
-        var productCategoryFilter = PradicateBuilder.True<ProductCategory>().And(x => !x.IsDeleted);
+        //create Predicates
+        var productCategoryFilterPredicate = PradicateBuilder.True<ProductCategory>();
 
-        //GenericTextFilterQuery
-        if (!string.IsNullOrWhiteSpace(productCategoryFilterDto.GenericTextFilter))
-            productCategoryFilter = productCategoryFilter.And(x =>
-                        x.Name.ToLower().Contains(productCategoryFilterDto.GenericTextFilter.ToLower())||
-                        (!string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(productCategoryFilterDto.GenericTextFilter.ToLower()))
-                    );
+        //Apply Product Category is Deleted filter
+        productCategoryFilterPredicate = productCategoryFilterPredicate.And(x => !x.IsDeleted);
 
-        //FieldTextFilterQuery
-        if (!string.IsNullOrWhiteSpace(productCategoryFilterDto.NameFilterText))
-            productCategoryFilter = productCategoryFilter.And(x => x.Name.ToLower().Contains(productCategoryFilterDto.NameFilterText.ToLower()));
-        if (!string.IsNullOrWhiteSpace(productCategoryFilterDto.DescriptionFilterText))
-            productCategoryFilter = productCategoryFilter.And(x => !string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(productCategoryFilterDto.DescriptionFilterText.ToLower()));
+        //Get Product Category filters
+        productCategoryFilterPredicate = ApplyimageTypeFilters(productCategoryFilterPredicate, productCategoryFilterDto);
 
-        productCategoryQuery = productCategoryQuery.Where(productCategoryFilter);
+        //Apply filters
+        IQueryable<ProductCategory> productCategoryQuery = _productCategoryRepo.GetQueyable().Where(productCategoryFilterPredicate);
 
-        //OrderByQuery
+        //ApplyGenericFilter
+        productCategoryQuery = ApplyGenericFilters(productCategoryQuery, productCategoryFilterDto);
 
-        Expression<Func<ProductCategory, object>> OrderByExpression;
+        //OrderBy
+        productCategoryQuery = ApplyOrderByFilter(productCategoryQuery, productCategoryFilterDto);
 
-        if (!string.IsNullOrWhiteSpace(productCategoryFilterDto.OrderByField) && productCategoryFilterDto.OrderByField.ToLower().Equals(Constants.OrderByNameValue, StringComparison.OrdinalIgnoreCase))
-            OrderByExpression = productCategory => productCategory.Name ?? "";
-        else if (!string.IsNullOrWhiteSpace(productCategoryFilterDto.OrderByField) && productCategoryFilterDto.OrderByField.ToLower().Equals(Constants.OrderByDescriptionValue, StringComparison.OrdinalIgnoreCase))
-            OrderByExpression = productCategory => productCategory.Description ?? "";
-        else
-            OrderByExpression = productCategory => productCategory.Id;
-
-        productCategoryQuery =
-            productCategoryFilterDto.OrderByEnumValue == null || productCategoryFilterDto.OrderByEnumValue.Equals(OrderByTypeEnum.Asc)
-            ? productCategoryQuery.OrderBy(OrderByExpression)
-            : productCategoryQuery.OrderByDescending(OrderByExpression);
+        //FatchTotalCount
+        paginatedproductCategoryList.Count = await productCategoryQuery.CountAsync();
 
         //Pagination
-        if (productCategoryFilterDto.IsPagination)
-            productCategoryQuery = productCategoryQuery.Skip((productCategoryFilterDto.PageNo - 1) * productCategoryFilterDto.PageSize).Take(productCategoryFilterDto.PageSize);
+        productCategoryQuery = ApplyPaginationFilter(productCategoryQuery, productCategoryFilterDto);
 
-        return await productCategoryQuery.Select(x => _productCategoryMapper.GetProductCategoryDto(x)).ToListAsync();
+        //FatchItems
+        paginatedproductCategoryList.Items = await productCategoryQuery.Select(x => _productCategoryMapper.GetProductCategoryDto(x)).ToListAsync();
+
+        return paginatedproductCategoryList;
+    }
+
+    private IQueryable<ProductCategory> ApplyGenericFilters(IQueryable<ProductCategory> productCategoryQuery, ProductCategoryFilterDto productCategoryFilterDto)
+    {
+        //Generic filters
+        if (!string.IsNullOrWhiteSpace(productCategoryFilterDto.GenericTextFilter))
+        {
+            var genericFilterPredicate = PradicateBuilder.False<ProductCategory>();
+            var filterText = productCategoryFilterDto.GenericTextFilter.Trim();
+            genericFilterPredicate = genericFilterPredicate
+                                    .Or(x => EF.Functions.ILike(x.Name, $"%{filterText}%"))
+                                    .Or(x => EF.Functions.ILike(x.Description, $"%{filterText}%"));
+
+            //Apply generic filters
+            return productCategoryQuery.Where(genericFilterPredicate);
+        }
+
+        return productCategoryQuery;
     }
 
     public async Task<ProductCategoryDto> GetProductCategoryByIdAsync(int id)
@@ -101,5 +111,43 @@ public class ProductCategoryService : IProductCategoryService
     public async Task<bool> IsProductCategoryExistByNameAsync(string Name)
     {
         return await _productCategoryRepo.IsProductCategoryExistByNameAsync(Name);
+    }
+
+    private Expression<Func<ProductCategory, bool>> ApplyimageTypeFilters(Expression<Func<ProductCategory, bool>> productCategoryFilterPredicate, ProductCategoryFilterDto productCategoryFilterDto)
+    {
+        if (!string.IsNullOrWhiteSpace(productCategoryFilterDto.NameFilterText))
+            productCategoryFilterPredicate = productCategoryFilterPredicate.And(x => EF.Functions.ILike(x.Name, $"%{productCategoryFilterDto.NameFilterText.Trim()}%"));
+        if (!string.IsNullOrWhiteSpace(productCategoryFilterDto.DescriptionFilterText))
+            productCategoryFilterPredicate = productCategoryFilterPredicate.And(x => EF.Functions.ILike(x.Description, $"%{productCategoryFilterDto.DescriptionFilterText.Trim()}%"));
+
+        return productCategoryFilterPredicate;
+    }
+
+    private IQueryable<ProductCategory> ApplyOrderByFilter(IQueryable<ProductCategory> productCategoryQuery, ProductCategoryFilterDto productCategoryFilterDto)
+    {
+        var orderByMappings = new Dictionary<string, Expression<Func<ProductCategory, object>>>(StringComparer.OrdinalIgnoreCase)
+        {
+            { Constants.OrderByNameValue, x => x.Name ?? "" },
+            { Constants.OrderByDescriptionValue, x => x.Description ?? "" }
+        };
+
+        if (!orderByMappings.TryGetValue(productCategoryFilterDto.OrderByField ?? "Id", out var orderByExpression))
+        {
+            orderByExpression = x => x.Id;
+        }
+
+        productCategoryQuery = productCategoryFilterDto.OrderByEnumValue.Equals(OrderByTypeEnum.Desc)
+            ? productCategoryQuery.OrderByDescending(orderByExpression)
+            : productCategoryQuery.OrderBy(orderByExpression);
+
+        return productCategoryQuery;
+    }
+
+    private IQueryable<ProductCategory> ApplyPaginationFilter(IQueryable<ProductCategory> productCategoryQuery, ProductCategoryFilterDto productCategoryFilterDto)
+    {
+        if (productCategoryFilterDto.IsPagination)
+            productCategoryQuery = productCategoryQuery.Skip((productCategoryFilterDto.PageNo - 1) * productCategoryFilterDto.PageSize).Take(productCategoryFilterDto.PageSize);
+
+        return productCategoryQuery;
     }
 }

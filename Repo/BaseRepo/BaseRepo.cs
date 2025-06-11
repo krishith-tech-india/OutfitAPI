@@ -28,13 +28,13 @@ namespace Repo
             return _context.Database.BeginTransaction();
         }
 
-        public async Task CompleTransaction(IDbContextTransaction transaction)
+        public async Task CommitTransaction(IDbContextTransaction transaction)
         {
             try
             {
                 await transaction.CommitAsync();
             }
-            finally
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
             }

@@ -1,6 +1,7 @@
 ﻿using Core;
 using Data.Models;
 using Dto;
+using Dto.Common;
 using Dto.OrderStatus;
 using Mapper;
 using Microsoft.EntityFrameworkCore;
@@ -30,45 +31,56 @@ public class OrderStatusService : IOrderStatusService
         _orderStatusMapper = orderStatusMapper;
     }
 
-    public async Task<List<OrderStatusDto>>  GetOrderStatusAsync(OrderStatusFilterDto orderStatusFilterDto)
+    public async Task<PaginatedList<OrderStatusDto>>  GetOrderStatusAsync(OrderStatusFilterDto orderStatusFilterDto)
     {
-        IQueryable<OrderStatus> orderStatusQuery = _orderStatusRepo.GetQueyable();
-        var orderStatusFilter = PradicateBuilder.True<OrderStatus>().And(x => !x.IsDeleted);
-        //GenericTextFilterQuery
-        if (!string.IsNullOrWhiteSpace(orderStatusFilterDto.GenericTextFilter))
+        // create paginated Address List
+        var paginatedorderStatusList = new PaginatedList<OrderStatusDto>();
 
-            orderStatusFilter = orderStatusFilter.And(x =>
-                        x.Name.ToLower().Contains(orderStatusFilterDto.GenericTextFilter.ToLower()) ||
-                        (!string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(orderStatusFilterDto.GenericTextFilter.ToLower()))
-                    );
+        //create Predicates
+        var orderStatusFilterPredicate = PradicateBuilder.True<OrderStatus>();
 
-        //FieldTextFilterQuery
-        if (!string.IsNullOrWhiteSpace(orderStatusFilterDto.NameFilterText))
-            orderStatusFilter = orderStatusFilter.And(x => x.Name.ToLower().Contains(orderStatusFilterDto.NameFilterText.ToLower()));
-        if (!string.IsNullOrWhiteSpace(orderStatusFilterDto.DescriptionFilterText))
-            orderStatusFilter = orderStatusFilter.And(x => !string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(orderStatusFilterDto.DescriptionFilterText.ToLower()));
+        //Apply Order Status is Deleted filter
+        orderStatusFilterPredicate = orderStatusFilterPredicate.And(x => !x.IsDeleted);
 
-        orderStatusQuery = orderStatusQuery.Where(orderStatusFilter);
+        //Get Order Status filters
+        orderStatusFilterPredicate = ApplyOrderStatusFilters(orderStatusFilterPredicate, orderStatusFilterDto);
 
-        //OrderByQuery
-        Expression<Func<OrderStatus, object>> orderByExpression;
-        if (!string.IsNullOrWhiteSpace(orderStatusFilterDto.OrderByField) && orderStatusFilterDto.OrderByField.ToLower().Equals(Constants.OrderByNameValue, StringComparison.OrdinalIgnoreCase))
-            orderByExpression = orderStatus => orderStatus.Name ?? "";
-        else if (!string.IsNullOrWhiteSpace(orderStatusFilterDto.OrderByField) && orderStatusFilterDto.OrderByField.ToLower().Equals(Constants.OrderByDescriptionValue, StringComparison.OrdinalIgnoreCase))
-            orderByExpression = orderStatus => orderStatus.Description ?? "";
-        else
-            orderByExpression = orderStatus => orderStatus.Id;
+        //Apply filters
+        IQueryable<OrderStatus> orderStatusQuery = _orderStatusRepo.GetQueyable().Where(orderStatusFilterPredicate);
 
-        orderStatusQuery = 
-            orderStatusFilterDto.OrderByEnumValue == null || orderStatusFilterDto.OrderByEnumValue.Equals(OrderByTypeEnum.Asc)
-            ? orderStatusQuery.OrderBy(orderByExpression)
-            : orderStatusQuery.OrderByDescending(orderByExpression);
+        //ApplyGenericFilter
+        orderStatusQuery = ApplyGenericFilters(orderStatusQuery, orderStatusFilterDto);
+
+        //OrderBy
+        orderStatusQuery = ApplyOrderByFilter(orderStatusQuery, orderStatusFilterDto);
+
+        //FatchTotalCount
+        paginatedorderStatusList.Count = await orderStatusQuery.CountAsync();
 
         //Pagination
-        if (orderStatusFilterDto.IsPagination)
-            orderStatusQuery = orderStatusQuery.Skip((orderStatusFilterDto.PageNo - 1) * orderStatusFilterDto.PageSize).Take(orderStatusFilterDto.PageSize);
+        orderStatusQuery = ApplyPaginationFilter(orderStatusQuery, orderStatusFilterDto);
 
-        return await orderStatusQuery.Select(x => _orderStatusMapper.GetOrderStatusDto(x)).ToListAsync();
+        //FatchItems
+        paginatedorderStatusList.Items = await orderStatusQuery.Select(x => _orderStatusMapper.GetOrderStatusDto(x)).ToListAsync();
+
+        return paginatedorderStatusList;
+    }
+
+    private IQueryable<OrderStatus> ApplyGenericFilters(IQueryable<OrderStatus> orderStatusQuery, OrderStatusFilterDto orderStatusFilterDto)
+    {
+        //Generic filters
+        if (!string.IsNullOrWhiteSpace(orderStatusFilterDto.GenericTextFilter))
+        {
+            var genericFilterPredicate = PradicateBuilder.False<OrderStatus>();
+            var filterText = orderStatusFilterDto.GenericTextFilter.Trim();
+            genericFilterPredicate = genericFilterPredicate
+                                    .Or(x => EF.Functions.ILike(x.Name, $"%{filterText}%"))
+                                    .Or(x => EF.Functions.ILike(x.Description, $"%{filterText}%"));
+
+            //Apply generic filters
+            return orderStatusQuery.Where(genericFilterPredicate);
+        }
+        return orderStatusQuery;
     }
 
     public async Task<OrderStatusDto> GetOrderStatusByIdAsync(int id)
@@ -100,5 +112,44 @@ public class OrderStatusService : IOrderStatusService
     public async Task<bool> IsOrderStatusExistByNameAsync(string Name)
     {
         return await _orderStatusRepo.IsOrderStatusExistByNameAsync(Name);
+    }
+
+    private Expression<Func<OrderStatus, bool>> ApplyOrderStatusFilters(Expression<Func<OrderStatus, bool>> orderStatusFilterPredicate, OrderStatusFilterDto orderStatusFilterDto)
+    {
+        //Apply Field Text Filters
+        if (!string.IsNullOrWhiteSpace(orderStatusFilterDto.NameFilterText))
+            orderStatusFilterPredicate = orderStatusFilterPredicate.And(x => EF.Functions.ILike(x.Name, $"%{orderStatusFilterDto.NameFilterText.Trim()}%"));
+        if (!string.IsNullOrWhiteSpace(orderStatusFilterDto.DescriptionFilterText))
+            orderStatusFilterPredicate = orderStatusFilterPredicate.And(x => EF.Functions.ILike(x.Description, $"%{orderStatusFilterDto.DescriptionFilterText.Trim()}%"));
+
+        return orderStatusFilterPredicate;
+    }
+
+    private IQueryable<OrderStatus> ApplyOrderByFilter(IQueryable<OrderStatus> orderStatusQuery, OrderStatusFilterDto orderStatusFilterDto)
+    {
+        var orderByMappings = new Dictionary<string, Expression<Func<OrderStatus, object>>>(StringComparer.OrdinalIgnoreCase)
+        {
+            { Constants.OrderByNameValue, x => x.Name ?? "" },
+            { Constants.OrderByDescriptionValue, x => x.Description ?? "" }
+        };
+
+        if (!orderByMappings.TryGetValue(orderStatusFilterDto.OrderByField ?? "Id", out var orderByExpression))
+        {
+            orderByExpression = x => x.Id;
+        }
+
+        orderStatusQuery = orderStatusFilterDto.OrderByEnumValue.Equals(OrderByTypeEnum.Desc)
+            ? orderStatusQuery.OrderByDescending(orderByExpression)
+            : orderStatusQuery.OrderBy(orderByExpression);
+
+        return orderStatusQuery;
+    }
+
+    private IQueryable<OrderStatus> ApplyPaginationFilter(IQueryable<OrderStatus> orderStatusQuery, OrderStatusFilterDto orderStatusFilterDto)
+    {
+        if (orderStatusFilterDto.IsPagination)
+            orderStatusQuery = orderStatusQuery.Skip((orderStatusFilterDto.PageNo - 1) * orderStatusFilterDto.PageSize).Take(orderStatusFilterDto.PageSize);
+
+        return orderStatusQuery;
     }
 }

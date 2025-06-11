@@ -65,4 +65,26 @@ public class ProductMapper : IProductMapper
             ProductGroupId = product.ProductGroupId.Value
         };
     }
+
+    public Image GetEntity(ImageDto imageDto)
+    {
+        return new Image
+        {
+            Url = imageDto.Url,
+            ProductId = imageDto.ProductId,
+            ImageTypeId = imageDto.ImageTypeId,
+        };
+    }
+
+    public ImageDto GetImageDto(Image image)
+    {
+        return new ImageDto
+        {
+            Id = image.Id,
+            Url = image.Url,
+            ProductId = image.ProductId.Value,
+            ImageTypeId = image.ImageTypeId.Value,
+
+        };
+    }
 }

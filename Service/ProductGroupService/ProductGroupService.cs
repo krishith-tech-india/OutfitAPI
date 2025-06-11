@@ -1,12 +1,14 @@
 ﻿using Core;
 using Data.Models;
 using Dto;
+using Dto.Common;
 using Mapper;
 using Microsoft.EntityFrameworkCore;
 using Repo;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
@@ -30,120 +32,111 @@ public class ProductGroupService : IProductGroupService
         _productCategoryRepo = productCategoryRepo;
     }
 
-    public async Task<List<ProductGroupDto>> GetProductGroupsAsync(ProductGroupFilterDto productGroupFilterDto)
+    public async Task<PaginatedList<ProductGroupDto>> GetProductGroupsAsync(ProductGroupFilterDto productGroupFilterDto)
     {
-        var productGroupQueyable = _productGroupRepo.GetQueyable();
-        var productCategoryQueyable = _productCategoryRepo.GetQueyable();
+        // create paginated Product Groups List
+        var paginatedProductGroupsList = new PaginatedList<ProductGroupDto>();
 
+        //create Predicates
+        var productGroupsFilterPredicate = PradicateBuilder.True<ProductGroup>();
+        var productCategoryFilterPredicate = PradicateBuilder.True<ProductCategory>();
+
+        //Apply Product Groups is Deleted filter
+        productGroupsFilterPredicate = productGroupsFilterPredicate.And(x => !x.IsDeleted);
+
+        //Apply Product Category is Deleted filter
+        productCategoryFilterPredicate = productCategoryFilterPredicate.And(x => !x.IsDeleted);
+
+        //Get address filters
+        productGroupsFilterPredicate = ApplyProductGroupsFilters(productGroupsFilterPredicate, productGroupFilterDto);
+
+        //Get user filters
+        productCategoryFilterPredicate = ApplyProductCategoryFilters(productCategoryFilterPredicate, productGroupFilterDto);
+
+        //Apply filters
+        var productGroupQueyable = _productGroupRepo.GetQueyable().Where(productGroupsFilterPredicate);
+        var productCategoryQueyable = _productCategoryRepo.GetQueyable().Where(productCategoryFilterPredicate);
+
+        //join
         IQueryable<ProductGroupDto> productGroupQuery = productGroupQueyable
             .Join(
                 productCategoryQueyable,
                 productgroup => productgroup.CategoryId,
                 productcategory => productcategory.Id,
-                (productgroup, productcategory) => new
+                (productgroup, productcategory) => new ProductGroupDto()
                 {
-                    productgroup.Id,
-                    productgroup.Name,
-                    productgroup.Description,
-                    productgroup.Features,
-                    productgroup.SubTitle,
-                    productgroup.CategoryId,
-                    productCategoryName = productcategory.Name,
-                    productCategoryDeleted = productcategory.IsDeleted,
-                    productgroup.IsDeleted
+                    Id = productgroup.Id,
+                    Name = productgroup.Name,
+                    Description = productgroup.Description,
+                    Features = productgroup.Features,
+                    SubTitle = productgroup.SubTitle,
+                    CategoryId = productgroup.CategoryId.Value,
+                    CategoryName = productcategory.Name
                 }
-            )
-            .Where(x => !x.IsDeleted && !x.productCategoryDeleted)
-            .Select(x => new ProductGroupDto()
-            {
-                Id = x.Id,
-                Name = x.Name,
-                Description = x.Description,
-                Features = x.Features,
-                SubTitle = x.SubTitle,
-                CategoryId = x.CategoryId.Value,
-                CategoryName = x.productCategoryName
-            });
+            );
 
-        //GenericTextFilterQuery
-        if (!string.IsNullOrWhiteSpace(productGroupFilterDto.GenericTextFilter))
-            productGroupQuery = productGroupQuery.Where(x =>
-                        x.Name.ToLower().Contains(productGroupFilterDto.GenericTextFilter.ToLower()) ||
-                        (!string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(productGroupFilterDto.GenericTextFilter.ToLower())) ||
-                        (!string.IsNullOrWhiteSpace(x.Features) && x.Features.ToLower().Contains(productGroupFilterDto.GenericTextFilter.ToLower())) ||
-                        (!string.IsNullOrWhiteSpace(x.SubTitle) && x.SubTitle.ToLower().Contains(productGroupFilterDto.GenericTextFilter.ToLower())) ||
-                        x.CategoryName.ToLower().Contains(productGroupFilterDto.GenericTextFilter.ToLower()) 
-                    );
+        //ApplyGenericFilter
+        productGroupQuery = ApplyGenericFilters(productGroupQuery, productGroupFilterDto);
 
-        //FieldTextFilterQuery
-        if (!string.IsNullOrWhiteSpace(productGroupFilterDto.NameFilterText))
-            productGroupQuery = productGroupQuery.Where(x => x.Name.ToLower().Contains(productGroupFilterDto.NameFilterText.ToLower()));
-        if (!string.IsNullOrWhiteSpace(productGroupFilterDto.DescriptionFilterText))
-            productGroupQuery = productGroupQuery.Where(x => !string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(productGroupFilterDto.DescriptionFilterText.ToLower()));
-        if (!string.IsNullOrWhiteSpace(productGroupFilterDto.FeaturesFilterText))
-            productGroupQuery = productGroupQuery.Where(x => !string.IsNullOrWhiteSpace(x.Features) && x.Features.ToLower().Contains(productGroupFilterDto.FeaturesFilterText.ToLower()));
-        if (!string.IsNullOrWhiteSpace(productGroupFilterDto.SubTitleFilterText))
-            productGroupQuery = productGroupQuery.Where(x => !string.IsNullOrWhiteSpace(x.SubTitle) && x.SubTitle.ToLower().Contains(productGroupFilterDto.SubTitleFilterText.ToLower()));
-        if (!string.IsNullOrWhiteSpace(productGroupFilterDto.CategoryNameFilterText))
-            productGroupQuery = productGroupQuery.Where(x => x.CategoryName.ToLower().Contains(productGroupFilterDto.CategoryNameFilterText.ToLower()));
+        //OrderBy
+        productGroupQuery = ApplyOrderByFilter(productGroupQuery, productGroupFilterDto);
 
-        //OrderByQuery
-        if (!string.IsNullOrWhiteSpace(productGroupFilterDto.OrderByField) && productGroupFilterDto.OrderByField.ToLower().Equals(Constants.OrderByNameValue, StringComparison.OrdinalIgnoreCase))
-            productGroupQuery = productGroupQuery.OrderBy(x => x.Name);
-        else if (!string.IsNullOrWhiteSpace(productGroupFilterDto.OrderByField) && productGroupFilterDto.OrderByField.ToLower().Equals(Constants.OrderByDescriptionValue, StringComparison.OrdinalIgnoreCase))
-            productGroupQuery = productGroupQuery.OrderBy(x => x.Description);
-        else if (!string.IsNullOrWhiteSpace(productGroupFilterDto.OrderByField) && productGroupFilterDto.OrderByField.ToLower().Equals(Constants.OrderByFeaturesValue, StringComparison.OrdinalIgnoreCase))
-            productGroupQuery = productGroupQuery.OrderBy(x => x.Features);
-        else if (!string.IsNullOrWhiteSpace(productGroupFilterDto.OrderByField) && productGroupFilterDto.OrderByField.ToLower().Equals(Constants.OrderBySubTitleValue, StringComparison.OrdinalIgnoreCase))
-            productGroupQuery = productGroupQuery.OrderBy(x => x.SubTitle);
-        else if (!string.IsNullOrWhiteSpace(productGroupFilterDto.OrderByField) && productGroupFilterDto.OrderByField.ToLower().Equals(Constants.OrderByCategoryIdValue, StringComparison.OrdinalIgnoreCase))
-            productGroupQuery = productGroupQuery.OrderBy(x => x.CategoryId);
-        else if (!string.IsNullOrWhiteSpace(productGroupFilterDto.OrderByField) && productGroupFilterDto.OrderByField.ToLower().Equals(Constants.OrderByCategoryNameValue, StringComparison.OrdinalIgnoreCase))
-            productGroupQuery = productGroupQuery.OrderBy(x => x.CategoryName);
-        else
-            productGroupQuery = productGroupQuery.OrderBy(x => x.Id);
+        //FatchTotalCount
+        paginatedProductGroupsList.Count = await productGroupQuery.CountAsync();
 
         //Pagination
-        if (productGroupFilterDto.IsPagination)
-            productGroupQuery = productGroupQuery.Skip((productGroupFilterDto.PageNo - 1) * productGroupFilterDto.PageSize).Take(productGroupFilterDto.PageSize);
+        productGroupQuery = ApplyPaginationFilter(productGroupQuery, productGroupFilterDto);
 
-        return await productGroupQuery.ToListAsync();
+        //FatchItems
+        paginatedProductGroupsList.Items = await productGroupQuery.ToListAsync();
+
+        return paginatedProductGroupsList;
+    }
+
+
+    private IQueryable<ProductGroupDto> ApplyGenericFilters(IQueryable<ProductGroupDto> productGroupQuery, ProductGroupFilterDto productGroupFilterDto)
+    {
+
+        //Generic filters
+        if (!string.IsNullOrWhiteSpace(productGroupFilterDto.GenericTextFilter))
+        {
+            var genericFilterPredicate = PradicateBuilder.False<ProductGroupDto>();
+            var filterText = productGroupFilterDto.GenericTextFilter.Trim();
+            genericFilterPredicate = genericFilterPredicate
+                                    .Or(x => EF.Functions.ILike(x.Name, $"%{filterText}%"))
+                                    .Or(x => EF.Functions.ILike(x.Description, $"%{filterText}%"))
+                                    .Or(x => EF.Functions.ILike(x.Features, $"%{filterText}%"))
+                                    .Or(x => EF.Functions.ILike(x.SubTitle, $"%{filterText}%"))
+                                    .Or(x => EF.Functions.ILike(x.CategoryName, $"%{filterText}%"));
+
+            //Apply generic filters
+            return productGroupQuery.Where(genericFilterPredicate);
+        }
+
+        return productGroupQuery;
     }
 
     public async Task<ProductGroupDto> GetProductGroupByIDAsync(int id)
     {
-        var productGroupQueyable = _productGroupRepo.GetQueyable();
-        var productCategoryQueyable = _productCategoryRepo.GetQueyable();
+        var productGroupQueyable = _productGroupRepo.GetQueyable().Where(x => x.Id == id && !x.IsDeleted);
+        var productCategoryQueyable = _productCategoryRepo.GetQueyable().Where(x => !x.IsDeleted);
 
         var productGroupQuery = await productGroupQueyable
             .Join(
                 productCategoryQueyable,
                 productgroup => productgroup.CategoryId,
                 productcategory => productcategory.Id,
-                (productgroup, productcategory) => new
+                (productgroup, productcategory) => new ProductGroupDto()
                 {
-                    productgroup.Id,
-                    productgroup.Name,
-                    productgroup.Description,
-                    productgroup.Features,
-                    productgroup.SubTitle,
-                    productgroup.CategoryId,
-                    productCategoryName = productcategory.Name,
-                    productCategoryDeleted = productcategory.IsDeleted,
-                    productgroup.IsDeleted
+                    Id = productgroup.Id,
+                    Name = productgroup.Name,
+                    Description = productgroup.Description,
+                    Features = productgroup.Features,
+                    SubTitle = productgroup.SubTitle,
+                    CategoryId = productgroup.CategoryId.Value,
+                    CategoryName = productcategory.Name
                 }
-            )
-            .Where(x => x.Id == id && !x.IsDeleted && !x.productCategoryDeleted)
-            .Select(x => new ProductGroupDto()
-            {
-                Id = x.Id,
-                Name = x.Name,
-                Description = x.Description,
-                Features = x.Features,
-                SubTitle = x.SubTitle,
-                CategoryId = x.CategoryId.Value,
-                CategoryName = x.productCategoryName
-            }).FirstOrDefaultAsync();
+            ).FirstOrDefaultAsync();
 
         if (productGroupQuery == null)
             throw new ApiException(HttpStatusCode.NotFound, string.Format(Constants.NotExistExceptionMessage, "Product Group", "Id", id));
@@ -151,86 +144,67 @@ public class ProductGroupService : IProductGroupService
         return productGroupQuery;
     }
 
-    public async Task<List<ProductGroupDto>> GetProductGroupByCategoryIdAsync(int id , ProductGroupFilterDto productGroupFilterDto)
+    public async Task<PaginatedList<ProductGroupDto>> GetProductGroupByCategoryIdAsync(int categoryid, ProductGroupFilterDto productGroupFilterDto)
     {
-        if (!await _productCategoryRepo.IsProductCategoryIdExistAsync(id))
-                throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.NotExistExceptionMessage, "Product Group", "Category Id", id));
+        if (!await _productCategoryRepo.IsProductCategoryIdExistAsync(categoryid))
+                throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.NotExistExceptionMessage, "Product Group", "Category Id", categoryid));
 
-        var productGroupQueyable = _productGroupRepo.GetQueyable();
-        var productCategoryQueyable = _productCategoryRepo.GetQueyable();
+        // create paginated Product Groups List
+        var paginatedProductGroupsList = new PaginatedList<ProductGroupDto>();
 
+        //create Predicates
+        var productGroupsFilterPredicate = PradicateBuilder.True<ProductGroup>();
+        var productCategoryFilterPredicate = PradicateBuilder.True<ProductCategory>();
+
+        //Apply Product Groups Category id filter
+        productGroupsFilterPredicate = productGroupsFilterPredicate.And(x => !x.IsDeleted);
+        productGroupsFilterPredicate = productGroupsFilterPredicate.And(x => x.CategoryId.Equals(categoryid));
+        productCategoryFilterPredicate = productCategoryFilterPredicate.And(x => !x.IsDeleted);
+
+        //Get address filters
+        productGroupsFilterPredicate = ApplyProductGroupsFilters(productGroupsFilterPredicate, productGroupFilterDto);
+
+        //Get user filters
+        productCategoryFilterPredicate = ApplyProductCategoryFilters(productCategoryFilterPredicate, productGroupFilterDto);
+
+        //Apply filters
+        var productGroupQueyable = _productGroupRepo.GetQueyable().Where(productGroupsFilterPredicate);
+        var productCategoryQueyable = _productCategoryRepo.GetQueyable().Where(productCategoryFilterPredicate);
+
+        //join
         IQueryable<ProductGroupDto> productGroupQuery = productGroupQueyable
             .Join(
                 productCategoryQueyable,
                 productgroup => productgroup.CategoryId,
                 productcategory => productcategory.Id,
-                (productgroup, productcategory) => new
+                (productgroup, productcategory) => new ProductGroupDto()
                 {
-                    productgroup.Id,
-                    productgroup.Name,
-                    productgroup.Description,
-                    productgroup.Features,
-                    productgroup.SubTitle,
-                    productgroup.CategoryId,
-                    productCategoryName = productcategory.Name,
-                    productCategoryDeleted = productcategory.IsDeleted,
-                    productgroup.IsDeleted
+                    Id = productgroup.Id,
+                    Name = productgroup.Name,
+                    Description = productgroup.Description,
+                    Features = productgroup.Features,
+                    SubTitle = productgroup.SubTitle,
+                    CategoryId = productgroup.CategoryId.Value,
+                    CategoryName = productcategory.Name
                 }
-            )
-            .Where(x => x.CategoryId == id && !x.IsDeleted && !x.productCategoryDeleted)
-            .Select(x => new ProductGroupDto()
-            {
-                Id = x.Id,
-                Name = x.Name,
-                Description = x.Description,
-                Features = x.Features,
-                SubTitle = x.SubTitle,
-                CategoryId = x.CategoryId.Value,
-                CategoryName = x.productCategoryName
-            });
+            );
 
-        //GenericTextFilterQuery
-        if (!string.IsNullOrWhiteSpace(productGroupFilterDto.GenericTextFilter))
-            productGroupQuery = productGroupQuery.Where(x =>
-                        x.Name.ToLower().Contains(productGroupFilterDto.GenericTextFilter.ToLower()) ||
-                        (!string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(productGroupFilterDto.GenericTextFilter.ToLower())) ||
-                        (!string.IsNullOrWhiteSpace(x.Features) && x.Features.ToLower().Contains(productGroupFilterDto.GenericTextFilter.ToLower())) ||
-                        (!string.IsNullOrWhiteSpace(x.SubTitle) && x.SubTitle.ToLower().Contains(productGroupFilterDto.GenericTextFilter.ToLower())) ||
-                        x.CategoryName.ToLower().Contains(productGroupFilterDto.GenericTextFilter.ToLower())
-                    );
+        //ApplyGenericFilter
+        productGroupQuery = ApplyGenericFilters(productGroupQuery, productGroupFilterDto);
 
-        //FieldTextFilterQuery
-        if (!string.IsNullOrWhiteSpace(productGroupFilterDto.NameFilterText))
-            productGroupQuery = productGroupQuery.Where(x => x.Name.ToLower().Contains(productGroupFilterDto.NameFilterText.ToLower()));
-        if (!string.IsNullOrWhiteSpace(productGroupFilterDto.DescriptionFilterText))
-            productGroupQuery = productGroupQuery.Where(x => !string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(productGroupFilterDto.DescriptionFilterText.ToLower()));
-        if (!string.IsNullOrWhiteSpace(productGroupFilterDto.FeaturesFilterText))
-            productGroupQuery = productGroupQuery.Where(x => !string.IsNullOrWhiteSpace(x.Features) && x.Features.ToLower().Contains(productGroupFilterDto.FeaturesFilterText.ToLower()));
-        if (!string.IsNullOrWhiteSpace(productGroupFilterDto.SubTitleFilterText))
-            productGroupQuery = productGroupQuery.Where(x => !string.IsNullOrWhiteSpace(x.SubTitle) && x.SubTitle.ToLower().Contains(productGroupFilterDto.SubTitleFilterText.ToLower()));
-        if (!string.IsNullOrWhiteSpace(productGroupFilterDto.CategoryNameFilterText))
-            productGroupQuery = productGroupQuery.Where(x => x.CategoryName.ToLower().Contains(productGroupFilterDto.CategoryNameFilterText.ToLower()));
+        //OrderBy
+        productGroupQuery = ApplyOrderByFilter(productGroupQuery, productGroupFilterDto);
 
-        //OrderByQuery
-        if (!string.IsNullOrWhiteSpace(productGroupFilterDto.OrderByField) && productGroupFilterDto.OrderByField.ToLower().Equals(Constants.OrderByNameValue, StringComparison.OrdinalIgnoreCase))
-            productGroupQuery = productGroupQuery.OrderBy(x => x.Name);
-        else if (!string.IsNullOrWhiteSpace(productGroupFilterDto.OrderByField) && productGroupFilterDto.OrderByField.ToLower().Equals(Constants.OrderByDescriptionValue, StringComparison.OrdinalIgnoreCase))
-            productGroupQuery = productGroupQuery.OrderBy(x => x.Description);
-        else if (!string.IsNullOrWhiteSpace(productGroupFilterDto.OrderByField) && productGroupFilterDto.OrderByField.ToLower().Equals(Constants.OrderByFeaturesValue, StringComparison.OrdinalIgnoreCase))
-            productGroupQuery = productGroupQuery.OrderBy(x => x.Features);
-        else if (!string.IsNullOrWhiteSpace(productGroupFilterDto.OrderByField) && productGroupFilterDto.OrderByField.ToLower().Equals(Constants.OrderBySubTitleValue, StringComparison.OrdinalIgnoreCase))
-            productGroupQuery = productGroupQuery.OrderBy(x => x.SubTitle);
-        else if (!string.IsNullOrWhiteSpace(productGroupFilterDto.OrderByField) && productGroupFilterDto.OrderByField.ToLower().Equals(Constants.OrderByCategoryIdValue, StringComparison.OrdinalIgnoreCase))
-            productGroupQuery = productGroupQuery.OrderBy(x => x.CategoryId);
-        else if (!string.IsNullOrWhiteSpace(productGroupFilterDto.OrderByField) && productGroupFilterDto.OrderByField.ToLower().Equals(Constants.OrderByCategoryNameValue, StringComparison.OrdinalIgnoreCase))
-            productGroupQuery = productGroupQuery.OrderBy(x => x.CategoryName);
-        else
-            productGroupQuery = productGroupQuery.OrderBy(x => x.Id);
+        //FatchTotalCount
+        paginatedProductGroupsList.Count = await productGroupQuery.CountAsync();
 
         //Pagination
-        if (productGroupFilterDto.IsPagination)
-            productGroupQuery = productGroupQuery.Skip((productGroupFilterDto.PageNo - 1) * productGroupFilterDto.PageSize).Take(productGroupFilterDto.PageSize);
-        return await productGroupQuery.ToListAsync();
+        productGroupQuery = ApplyPaginationFilter(productGroupQuery, productGroupFilterDto);
+
+        //FatchItems
+        paginatedProductGroupsList.Items = await productGroupQuery.ToListAsync();
+
+        return paginatedProductGroupsList;
     }
 
     public async Task InsertProductGroupAsync(ProductGroupDto productGroupDto)
@@ -264,5 +238,61 @@ public class ProductGroupService : IProductGroupService
     public async Task<bool> IsProductGroupExistByName(string name)
     {
         return await _productGroupRepo.IsProductGroupExistByName(name);
+    }
+
+    private Expression<Func<ProductGroup, bool>> ApplyProductGroupsFilters(Expression<Func<ProductGroup, bool>> productGroupsFilterPredicate, ProductGroupFilterDto productGroupFilterDto)
+    {
+        //Apply Field Text Filters
+        if (!string.IsNullOrWhiteSpace(productGroupFilterDto.NameFilterText))
+            productGroupsFilterPredicate = productGroupsFilterPredicate.And(x => EF.Functions.ILike(x.Name, $"%{productGroupFilterDto.NameFilterText.Trim()}%"));
+        if (!string.IsNullOrWhiteSpace(productGroupFilterDto.DescriptionFilterText))
+            productGroupsFilterPredicate = productGroupsFilterPredicate.And(x => EF.Functions.ILike(x.Description, $"%{productGroupFilterDto.DescriptionFilterText.Trim()}%"));
+        if (!string.IsNullOrWhiteSpace(productGroupFilterDto.FeaturesFilterText))
+            productGroupsFilterPredicate = productGroupsFilterPredicate.And(x => EF.Functions.ILike(x.Features, $"%{productGroupFilterDto.FeaturesFilterText.Trim()}%"));
+        if (!string.IsNullOrWhiteSpace(productGroupFilterDto.SubTitleFilterText))
+            productGroupsFilterPredicate = productGroupsFilterPredicate.And(x => EF.Functions.ILike(x.SubTitle, $"%{productGroupFilterDto.SubTitleFilterText.Trim()}%"));
+
+        return productGroupsFilterPredicate;
+    }
+
+    private Expression<Func<ProductCategory, bool>> ApplyProductCategoryFilters(Expression<Func<ProductCategory, bool>> productCategoryFilterPredicate, ProductGroupFilterDto productGroupFilterDto)
+    {
+        //Apply Field Text Filters
+        if (!string.IsNullOrWhiteSpace(productGroupFilterDto.CategoryNameFilterText))
+            productCategoryFilterPredicate = productCategoryFilterPredicate.And(x => EF.Functions.ILike(x.Name, $"%{productGroupFilterDto.CategoryNameFilterText.Trim()}%"));
+
+        return productCategoryFilterPredicate;
+    }
+
+    private IQueryable<ProductGroupDto> ApplyOrderByFilter(IQueryable<ProductGroupDto> productGroupQuery, ProductGroupFilterDto productGroupFilterDto)
+    {
+        var orderByMappings = new Dictionary<string, Expression<Func<ProductGroupDto, object>>>(StringComparer.OrdinalIgnoreCase)
+        {
+            { Constants.OrderByNameValue, x => x.Name ?? "" },
+            { Constants.OrderByDescriptionValue, x => x.Description ?? "" },
+            { Constants.OrderByFeaturesValue, x => x.Features ?? "" },
+            { Constants.OrderBySubTitleValue, x => x.SubTitle ?? "" },
+            { Constants.OrderByCategoryIdValue, x => x.CategoryId},
+            { Constants.OrderByCategoryNameValue, x => x.CategoryName ?? "" }
+        };
+
+        if (!orderByMappings.TryGetValue(productGroupFilterDto.OrderByField ?? "Id", out var orderByExpression))
+        {
+            orderByExpression = x => x.Id;
+        }
+
+        productGroupQuery = productGroupFilterDto.OrderByEnumValue.Equals(OrderByTypeEnum.Desc)
+            ? productGroupQuery.OrderByDescending(orderByExpression)
+            : productGroupQuery.OrderBy(orderByExpression);
+
+        return productGroupQuery;
+    }
+
+    private IQueryable<ProductGroupDto> ApplyPaginationFilter(IQueryable<ProductGroupDto> productGroupQuery, ProductGroupFilterDto productGroupFilterDto)
+    {
+        if (productGroupFilterDto.IsPagination)
+            productGroupQuery = productGroupQuery.Skip((productGroupFilterDto.PageNo - 1) * productGroupFilterDto.PageSize).Take(productGroupFilterDto.PageSize);
+
+        return productGroupQuery;
     }
 }

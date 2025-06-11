@@ -13,6 +13,8 @@ public class ProductDto
     public string Name { get; set; } = null!;
     public string? Description { get; set; }
     [Required]
+    public List<ImageDto> Images { get; set; } = new List<ImageDto>();
+    [Required]
     public int OriginalPrice { get; set; }
     [Required]
     public int DiscountedPrice { get; set; } 

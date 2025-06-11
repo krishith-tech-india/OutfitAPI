@@ -11,6 +11,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace Service;
 
@@ -19,16 +20,23 @@ public class ProductService : IProductService
     private readonly IProductRepo _productRepo;
     private readonly IProductMapper _productMapper;
     private readonly IProductGroupRepo _productGroupRepo;
+    private readonly IImageRepo _imageRepo;
+    private readonly IImageTypeRepo _imageTypeRepo;
 
     public ProductService(
         IProductRepo productRepo,
         IProductMapper productMapper,
-        IProductGroupRepo productGroupRepo
+        IProductGroupRepo productGroupRepo,
+        IImageRepo imageRepo,
+        IImageTypeRepo imageTypeRepo
+
     )
     {
         _productGroupRepo = productGroupRepo;
         _productRepo = productRepo;
         _productMapper = productMapper;
+        _imageRepo = imageRepo;
+        _imageTypeRepo = imageTypeRepo;
     }
 
     public async Task<List<ProductDto>> GetProductsAsync(ProductFilterDto productFilterDto)
@@ -475,10 +483,25 @@ public class ProductService : IProductService
 
     public async Task InsertProductAsync(ProductDto productDto)
     {
+        var tras = _productRepo.BeginTransaction();
+
         if(!await _productGroupRepo.IsProductGroupIdExistAsync(productDto.ProductGroupId))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.NotExistExceptionMessage, "Product", " Group Id", productDto.ProductGroupId));
+            throw new ApiException(HttpStatusCode.BadRequest, string.Format(Constants.NotExistExceptionMessage, "Product", " Group Id", productDto.ProductGroupId));
         var product = _productMapper.GetEntity(productDto);
-        await _productRepo.InsertProductAsync(product);
+        int productId = await _productRepo.InsertProductAsync(product);
+
+        foreach (var image in productDto.Images)
+        {
+            if (string.IsNullOrWhiteSpace(image.Url))
+                throw new ApiException(HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Image ", "Url"));
+            if (image.ImageTypeId <= 0)
+                throw new ApiException(HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Image ", "ImageTypeId"));
+            if (!await _imageTypeRepo.IsImageTypeExistAsync(image.ImageTypeId))
+                throw new ApiException(HttpStatusCode.BadRequest, string.Format(Constants.NotExistExceptionMessage, "Image", "Image Type Id", image.ImageTypeId));
+            await _imageRepo.InsertImageAsync(_productMapper.GetEntity(image), productId);
+        }
+
+        await _productRepo.CommitTransaction(tras);
     }
 
     public async Task UpdateProductAsync(int id,ProductDto productDto)

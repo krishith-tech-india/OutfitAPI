@@ -1,4 +1,5 @@
 ﻿using Dto;
+using Dto.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +11,6 @@ namespace Service;
 public interface IAddressService
 {
     Task<AddressDto> GetAddressByIdAsync(int id);
-    Task<List<AddressDto>> GetAddressByUserIdAsync(int UserId, AddressFilterDto addressFilterDto);
+    Task<PaginatedList<AddressDto>> GetAddressByUserIdAsync(int UserId, AddressFilterDto addressFilterDto);
     Task InsertAddressAsync(AddressDto addressDto);
 }

@@ -1,6 +1,7 @@
 using Core;
 using Data.Models;
 using Dto;
+using Dto.Common;
 using Dto.OrderStatus;
 using Mapper;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +9,7 @@ using Microsoft.EntityFrameworkCore.Internal;
 using Microsoft.IdentityModel.Tokens;
 using Repo;
 using System.Data;
+using System.Linq.Expressions;
 
 namespace Service;
 
@@ -28,92 +30,81 @@ public class RoleService : IRoleService
         _userRepo = userRepo;
     }
 
-    public async Task<List<RoleDto>> GetRolesAsync(RoleFilterDto roleFilterDto)
+    public async Task<PaginatedList<RoleDto>> GetRolesAsync(RoleFilterDto roleFilterDto)
     {
-        var userQueriable = _userRepo.GetQueyable();
-        var roleQueriable = _roleRepo.GetQueyable();
+        // Create paginated User List
+        var paginatedRoleList = new PaginatedList<RoleDto>();
 
-        IQueryable<RoleDto> RoleQuery = roleQueriable
+        // Create Predicates
+        var roleFilterPredicate = PradicateBuilder.True<Role>();
+        var userFilterPredicate = PradicateBuilder.True<User>();
+
+        //Apply role is Deleted filter
+        roleFilterPredicate = roleFilterPredicate.And(x => !x.IsDeleted);
+
+        //Get address filters
+        roleFilterPredicate = ApplyRoleFilters(roleFilterPredicate, roleFilterDto);
+
+        //Apply filters
+        var roleQueriable = _roleRepo.GetQueyable().Where(roleFilterPredicate);
+        var userQueriable = _userRepo.GetQueyable().Where(userFilterPredicate);
+
+        //join
+        IQueryable<RoleDto> roleQuery = roleQueriable
             .GroupJoin(
                 userQueriable,
                 role => role.Id,
                 user => user.RoleId,
-                (role, userList) => new
+                (role, userList) => new RoleDto()
                 {
-                    role.Id,
-                    role.RoleName,
-                    role.RoleDesc,
-                    role.IsDeleted,
-                    UserCount = userList.Where(x => !x.IsDeleted).Count()
+                    Id = role.Id,
+                    Name = role.RoleName,
+                    Description = role.RoleDesc,
+                    UserCount = userList.Where(x => !x.IsDeleted).Count(),
                 }
-            ).Where(x => !x.IsDeleted)
-            .Select(x => new RoleDto
-            {
-                Id = x.Id,
-                Name = x.RoleName,
-                Description = x.RoleDesc,
-                UserCount = x.UserCount
-            });
+            );
 
-        //GenericTextFilterQuery
-        if (!string.IsNullOrWhiteSpace(roleFilterDto.GenericTextFilter))
-            RoleQuery = RoleQuery.Where(x =>
-                        x.Name.ToLower().Contains(roleFilterDto.GenericTextFilter.ToLower()) ||
-                        (!string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(roleFilterDto.GenericTextFilter.ToLower()))
-                    );
+        //ApplyGenericFilter
+        roleQuery = ApplyGenericFilters(roleQuery, roleFilterDto);
 
-        //FieldTextFilterQuery
-        if(!string.IsNullOrWhiteSpace(roleFilterDto.NameFilterText))
-            RoleQuery = RoleQuery.Where(x => x.Name.ToLower().Contains(roleFilterDto.NameFilterText.ToLower()));
-        if (!string.IsNullOrWhiteSpace(roleFilterDto.DescriptionFilterText))
-            RoleQuery = RoleQuery.Where(x => !string.IsNullOrWhiteSpace(x.Description) && x.Description.ToLower().Contains(roleFilterDto.DescriptionFilterText.ToLower()));
+        //OrderBy
+        roleQuery = ApplyOrderByFilter(roleQuery, roleFilterDto);
 
-        //OrderByQuery
-        if (!string.IsNullOrWhiteSpace(roleFilterDto.OrderByField) && roleFilterDto.OrderByField.ToLower().Equals(Constants.OrderByNameValue, StringComparison.OrdinalIgnoreCase))
-            RoleQuery = RoleQuery.OrderBy(x => x.Name);
-        else if(!string.IsNullOrWhiteSpace(roleFilterDto.OrderByField) && roleFilterDto.OrderByField.ToLower().Equals(Constants.OrderByDescriptionValue, StringComparison.OrdinalIgnoreCase))
-            RoleQuery = RoleQuery.OrderBy(x => x.Description);
-        else
-            RoleQuery = RoleQuery.OrderBy(x => x.Id);
+        //FatchTotalCount
+        paginatedRoleList.Count = await roleQuery.CountAsync();
 
         //Pagination
-        if (roleFilterDto.IsPagination)
-            RoleQuery = RoleQuery.Skip((roleFilterDto.PageNo - 1) * roleFilterDto.PageSize).Take(roleFilterDto.PageSize);
+        roleQuery = ApplyPaginationFilter(roleQuery, roleFilterDto);
 
-        return await RoleQuery.ToListAsync();
+        //FatchItems
+        paginatedRoleList.Items = await roleQuery.ToListAsync();
+
+        return paginatedRoleList;
     }
 
     public async Task<RoleDto> GetRoleByIdAsync(int id)
     {
         var userQueriable = _userRepo.GetQueyable();
-        var roleQueriable = _roleRepo.GetQueyable();
+        var roleQueriable = _roleRepo.GetQueyable().Where(x => x.Id == id && !x.IsDeleted);
 
-        var RoleQuery = await roleQueriable
+        var roleQuery = await roleQueriable
             .GroupJoin(
                 userQueriable,
                 role => role.Id,
                 user => user.RoleId,
-                (role, userList) => new
+                (role, userList) => new RoleDto()
                 {
-                    role.Id,
-                    role.RoleName,
-                    role.RoleDesc,
-                    role.IsDeleted,
-                    UserCount = userList.Where(x => !x.IsDeleted).Count()
+                    Id = role.Id,
+                    Name = role.RoleName,
+                    Description = role.RoleDesc,
+                    UserCount = userList.Where(x => !x.IsDeleted).Count(),
                 }
-            ).Where(x => x.Id == id && !x.IsDeleted)
-            .Select(x => new RoleDto
-            {
-                Id = x.Id,
-                Name = x.RoleName,
-                Description = x.RoleDesc,
-                UserCount = x.UserCount
-            }).FirstOrDefaultAsync();
+            ).FirstOrDefaultAsync();
 
-        if (RoleQuery == null)
+        if (roleQuery == null)
             throw new ApiException(System.Net.HttpStatusCode.NotFound, string.Format(Constants.NotExistExceptionMessage, "Role", "Id", id));
 
-        return RoleQuery;
+        return roleQuery;
     }
 
     public async Task InsertRoleAsync(RoleDto roleDto)
@@ -142,5 +133,61 @@ public class RoleService : IRoleService
     public async Task<bool> IsRoleExistByNameAsync(string Name)
     {
         return await _roleRepo.IsRoleExistByNameAsync(Name);
+    }
+
+    private IQueryable<RoleDto> ApplyGenericFilters(IQueryable<RoleDto> roleQuery, RoleFilterDto roleFilterDto)
+    {
+        //Generic filters
+        if (!string.IsNullOrWhiteSpace(roleFilterDto.GenericTextFilter))
+        {
+            var genericFilterPredicate = PradicateBuilder.False<RoleDto>();
+            var filterText = roleFilterDto.GenericTextFilter.Trim();
+            genericFilterPredicate = genericFilterPredicate
+                                    .Or(x => EF.Functions.ILike(x.Name, $"%{filterText}%"))
+                                    .Or(x => EF.Functions.ILike(x.Description, $"%{filterText}%"));
+
+            //Apply generic filters
+            return roleQuery.Where(genericFilterPredicate);
+        }
+
+        return roleQuery;
+    }
+
+    private Expression<Func<Role, bool>> ApplyRoleFilters(Expression<Func<Role, bool>> roleFilterPredicate, RoleFilterDto roleFilterDto)
+    {
+        //Apply Field Text Filters
+        if (!string.IsNullOrWhiteSpace(roleFilterDto.NameFilterText))
+            roleFilterPredicate = roleFilterPredicate.And(x => EF.Functions.ILike(x.RoleName, $"%{roleFilterDto.NameFilterText.Trim()}%"));
+        if (!string.IsNullOrWhiteSpace(roleFilterDto.DescriptionFilterText))
+            roleFilterPredicate = roleFilterPredicate.And(x => EF.Functions.ILike(x.RoleDesc, $"%{roleFilterDto.DescriptionFilterText.Trim()}%"));
+        return roleFilterPredicate;
+    }
+
+    private IQueryable<RoleDto> ApplyOrderByFilter(IQueryable<RoleDto> roleQuery, RoleFilterDto roleFilterDto)
+    {
+        var orderByMappings = new Dictionary<string, Expression<Func<RoleDto, object>>>(StringComparer.OrdinalIgnoreCase)
+        {
+            { Constants.OrderByNameValue, x => x.Name ?? "" },
+            { Constants.OrderByDescriptionValue, x => x.Description ?? "" }
+        };
+
+        if (!orderByMappings.TryGetValue(roleFilterDto.OrderByField ?? "Id", out var orderByExpression))
+        {
+            orderByExpression = x => x.Id;
+        }
+
+        roleQuery = roleFilterDto.OrderByEnumValue.Equals(OrderByTypeEnum.Desc)
+            ? roleQuery.OrderByDescending(orderByExpression)
+            : roleQuery.OrderBy(orderByExpression);
+
+        return roleQuery;
+    }
+
+    private IQueryable<RoleDto> ApplyPaginationFilter(IQueryable<RoleDto> roleQuery, RoleFilterDto roleFilterDto)
+    {
+        if (roleFilterDto.IsPagination)
+            roleQuery = roleQuery.Skip((roleFilterDto.PageNo - 1) * roleFilterDto.PageSize).Take(roleFilterDto.PageSize);
+
+        return roleQuery;
     }
 }

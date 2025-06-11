@@ -12,4 +12,6 @@ public interface IProductMapper
 {
     Product GetEntity(ProductDto productDto);
     ProductDto GetProductDto(Product product);
+    Image GetEntity(ImageDto imageDto);
+    ImageDto GetImageDto(Image image);
 }

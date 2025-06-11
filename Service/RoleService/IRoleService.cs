@@ -1,12 +1,13 @@
 using System;
 using Core;
 using Dto;
+using Dto.Common;
 
 namespace Service;
 
 public interface IRoleService
 {
-    Task<List<RoleDto>> GetRolesAsync(RoleFilterDto roleFilterDto);
+    Task<PaginatedList<RoleDto>> GetRolesAsync(RoleFilterDto roleFilterDto);
     Task<RoleDto> GetRoleByIdAsync(int id);
     Task InsertRoleAsync(RoleDto roleDto);
     Task DeleteRoleAsync(int id);

@@ -1,4 +1,5 @@
 ﻿using Dto;
+using Dto.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,9 +10,9 @@ namespace Service;
 
 public interface IReviewService
 {
-    Task<List<ReviewDto>> GetReviewesAsync(ReviewFilterDto reviewFilterDto);
+    Task<PaginatedList<ReviewDto>> GetReviewesAsync(ReviewFilterDto reviewFilterDto);
     Task<ReviewDto> GetReviewByIDAsync(int id);
-    Task<List<ReviewDto>> GetReviewByProductIdAsync(int ProductId, ReviewFilterDto reviewFilterDto);
+    Task<PaginatedList<ReviewDto>> GetReviewByProductIdAsync(int ProductId, ReviewFilterDto reviewFilterDto);
     Task InsertReviewAsync(ReviewDto reviewDto);
     Task UpdateReviewAsync(int id, ReviewDto reviewDto);
     Task DeleteReviewAsync(int id);

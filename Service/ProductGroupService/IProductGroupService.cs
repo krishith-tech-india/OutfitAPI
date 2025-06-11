@@ -1,4 +1,5 @@
 ﻿using Dto;
+using Dto.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,9 +10,9 @@ namespace Service;
 
 public interface IProductGroupService
 {
-    Task<List<ProductGroupDto>> GetProductGroupsAsync(ProductGroupFilterDto productGroupFilterDto);
+    Task<PaginatedList<ProductGroupDto>> GetProductGroupsAsync(ProductGroupFilterDto productGroupFilterDto);
     Task<ProductGroupDto> GetProductGroupByIDAsync(int id);
-    Task<List<ProductGroupDto>> GetProductGroupByCategoryIdAsync(int id, ProductGroupFilterDto productGroupFilterDto);
+    Task<PaginatedList<ProductGroupDto>> GetProductGroupByCategoryIdAsync(int id, ProductGroupFilterDto productGroupFilterDto);
     Task InsertProductGroupAsync(ProductGroupDto productGroupDto);
     Task UpdateProductGroupAsync(int id, ProductGroupDto productGroupDto);
     Task DeleteProductGroupAsync(int id);

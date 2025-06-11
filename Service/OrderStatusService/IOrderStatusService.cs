@@ -1,4 +1,5 @@
 ﻿using Dto;
+using Dto.Common;
 using Dto.OrderStatus;
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,7 @@ namespace Service;
 
 public interface IOrderStatusService
 {
-    Task<List<OrderStatusDto>> GetOrderStatusAsync(OrderStatusFilterDto genericFilterDto);
+    Task<PaginatedList<OrderStatusDto>> GetOrderStatusAsync(OrderStatusFilterDto genericFilterDto);
     Task<OrderStatusDto> GetOrderStatusByIdAsync(int id);
     Task InsertOrderStatusAsync(OrderStatusDto orderStatusDto);
     Task UpdateOrderStatusAsync(int id, OrderStatusDto orderStatusDto);

@@ -3,6 +3,7 @@ using Core.AppSettingConfigs;
 using Core.Authentication;
 using Data.Models;
 using Dto;
+using Dto.Common;
 using Mapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
@@ -12,6 +13,7 @@ using Microsoft.IdentityModel.Tokens;
 using Repo;
 using System.Data;
 using System.IdentityModel.Tokens.Jwt;
+using System.Linq.Expressions;
 using System.Net;
 using System.Security.Claims;
 using System.Text;
@@ -39,189 +41,148 @@ public class UserService : IUserService
         _jwtConfig = jwtConfig.Value;
     }
 
-    public async Task<List<UserDto>> GetUsersAsync(UserFilterDto userFilterDto)
+    public async Task<PaginatedList<UserDto>> GetUsersAsync(UserFilterDto userFilterDto)
     {
-        var userQueryable = _userRepo.GetQueyable();
-        var roleQueyable = _roleRepo.GetQueyable();
+        //Create paginated User List
+        var paginatedUserList = new PaginatedList<UserDto>();
 
-        IQueryable<UserDto> UserQuery = userQueryable
-            .Join(
-                roleQueyable,
+        //create Predicates
+        var userFilterPredicate = PradicateBuilder.True<User>();
+        var roleFilterPredicate = PradicateBuilder.True<Role>();
+
+        //Apply user id filter
+        userFilterPredicate = userFilterPredicate.And(x => !x.IsDeleted);
+        roleFilterPredicate = roleFilterPredicate.And(x => !x.IsDeleted);
+
+        //Get address filters
+        userFilterPredicate = ApplyUserFilters(userFilterPredicate, userFilterDto);
+
+        //Get user filters
+        roleFilterPredicate = ApplyRoleFilters(roleFilterPredicate, userFilterDto);
+
+        //Apply filters
+        var userQueriable = _userRepo.GetQueyable().Where(userFilterPredicate);
+        var roleQueyable = _roleRepo.GetQueyable().Where(roleFilterPredicate);
+
+        //join
+        IQueryable<UserDto> userQuery = userQueriable.
+            Join(roleQueyable,
                 user => user.RoleId,
                 role => role.Id,
-                (user, role) => new
+                (user, role) => new UserDto()
                 {
-                    user.Id,
-                    user.Name,
-                    RoleId = role.Id,
-                    user.Email,
-                    user.PhNo,
-                    role.RoleName,
-                    RoleDeleted = role.IsDeleted,
-                    user.IsDeleted
+                    Id = user.Id,
+                    Name = user.Name,
+                    RoleId = user.RoleId,
+                    Email = user.Email,
+                    PhNo = user.PhNo,
+                    RoleName = role.RoleName,
                 }
-            )
-            .Where(x => !x.IsDeleted && !x.RoleDeleted)
-            .Select(x => new UserDto()
-             {
-                 Id = x.Id,
-                 Name = x.Name,
-                 RoleId = x.RoleId,
-                 Email = x.Email,
-                 PhNo = x.PhNo,
-                 RoleName = x.RoleName,
-             });
+            );
 
+        //ApplyGenericFilter
+        userQuery = ApplyGenericFilters(userQuery, userFilterDto);
 
-        //GenericTextFilterQuery
-        if (!string.IsNullOrWhiteSpace(userFilterDto.GenericTextFilter))
-            UserQuery = UserQuery.Where(x =>
-                        x.Name.ToLower().Contains(userFilterDto.GenericTextFilter.ToLower()) ||
-                        x.RoleName.ToLower().Contains(userFilterDto.GenericTextFilter.ToLower()) ||
-                        x.Email.ToLower().Contains(userFilterDto.GenericTextFilter.ToLower()) ||
-                        x.PhNo.ToLower().Contains(userFilterDto.GenericTextFilter.ToLower())
-                    );
+        //OrderBy
+        userQuery = ApplyOrderByFilter(userQuery, userFilterDto);
 
-        //FieldTextFilterQuery
-        if (!string.IsNullOrWhiteSpace(userFilterDto.RoleNameFilterText))
-            UserQuery = UserQuery.Where(x => x.RoleName.ToLower().Contains(userFilterDto.RoleNameFilterText.ToLower()));
-        if (!string.IsNullOrWhiteSpace(userFilterDto.EmailFilterText))
-            UserQuery = UserQuery.Where(x => x.Email.ToLower().Contains(userFilterDto.EmailFilterText.ToLower()));
-        if (!string.IsNullOrWhiteSpace(userFilterDto.PhNoFilterText))
-            UserQuery = UserQuery.Where(x => x.PhNo.ToLower().Contains(userFilterDto.PhNoFilterText.ToLower()));
-        if (!string.IsNullOrWhiteSpace(userFilterDto.NameFilterText))
-            UserQuery = UserQuery.Where(x => x.Name.ToLower().Contains(userFilterDto.NameFilterText.ToLower()));
-
-        //OrderByQuery
-        if (!string.IsNullOrWhiteSpace(userFilterDto.OrderByField) && userFilterDto.OrderByField.ToLower().Equals(Constants.OrderByNameValue, StringComparison.OrdinalIgnoreCase))
-            UserQuery = UserQuery.OrderBy(x => x.Name);
-        else if (!string.IsNullOrWhiteSpace(userFilterDto.OrderByField) && userFilterDto.OrderByField.ToLower().Equals(Constants.OrderByRoleNameValue, StringComparison.OrdinalIgnoreCase))
-            UserQuery = UserQuery.OrderBy(x => x.RoleName);
-        else if (!string.IsNullOrWhiteSpace(userFilterDto.OrderByField) && userFilterDto.OrderByField.ToLower().Equals(Constants.OrderByEmailValue, StringComparison.OrdinalIgnoreCase))
-            UserQuery = UserQuery.OrderBy(x => x.Email);
-        else if (!string.IsNullOrWhiteSpace(userFilterDto.OrderByField) && userFilterDto.OrderByField.ToLower().Equals(Constants.OrderByPhoneNoValue, StringComparison.OrdinalIgnoreCase))
-            UserQuery = UserQuery.OrderBy(x => x.PhNo);
-        else
-            UserQuery = UserQuery.OrderBy(x => x.Id);
+        //FatchTotalCount
+        paginatedUserList.Count = await userQuery.CountAsync();
 
         //Pagination
-        if (userFilterDto.IsPagination)
-            UserQuery = UserQuery.Skip((userFilterDto.PageNo - 1) * userFilterDto.PageSize).Take(userFilterDto.PageSize);
+        userQuery = ApplyPaginationFilter(userQuery, userFilterDto);
 
-        return await UserQuery.ToListAsync();
+        //FatchItems
+        paginatedUserList.Items = await userQuery.ToListAsync();
 
+        return paginatedUserList;
     }
 
     public async Task<UserDto> GetUserByIdAsync(int id)
     {
-        var userQuery = _userRepo.GetQueyable();
-        var roleQuery = _roleRepo.GetQueyable();
+
+        var userQuery = _userRepo.GetQueyable().Where(x => x.Id == id && !x.IsDeleted);
+        var roleQuery = _roleRepo.GetQueyable().Where(x => !x.IsDeleted);
 
         var user = await userQuery.Join(
                 roleQuery,
                 user => user.RoleId,
                 role => role.Id,
-                (user, role) => new
+                (user, role) => new UserDto()
                 {
-                    user.Id,
-                    user.Name,
-                    RoleId = role.Id,
-                    user.Email,
-                    user.PhNo,
-                    role.RoleName,
-                    RoleDeleted = role.IsDeleted,
-                    user.IsDeleted
+                    Id = user.Id,
+                    Name = user.Name,
+                    RoleId = user.RoleId,
+                    Email = user.Email,
+                    PhNo = user.PhNo,
+                    RoleName = role.RoleName,
                 }
-            )
-            .Where(x => x.Id == id && !x.IsDeleted && !x.RoleDeleted)
-            .Select(x => new UserDto()
-            {
-                Id = x.Id,
-                Name = x.Name,
-                RoleId = x.RoleId,
-                Email = x.Email,
-                PhNo = x.PhNo,
-                RoleName = x.RoleName,
-            }).FirstOrDefaultAsync();
+            ).FirstOrDefaultAsync();
 
         if (user == null)
             throw new ApiException(HttpStatusCode.NotFound, string.Format(Constants.NotExistExceptionMessage, "User", "Id", id));
 
         return user;
     }
-    public async Task<List<UserDto>> GetUserByRoleIdAsync(int roleId,UserFilterDto userFilterDto)
+    public async Task<PaginatedList<UserDto>> GetUserByRoleIdAsync(int roleId,UserFilterDto userFilterDto)
     {
         if (!await _roleRepo.IsRoleIdExistAsync(roleId))
             throw new ApiException(HttpStatusCode.NotFound, string.Format(Constants.NotExistExceptionMessage, "Role", "Id", roleId));
 
-        var userQueryable = _userRepo.GetQueyable();
-        var roleQueyable = _roleRepo.GetQueyable();
+        //Create paginated User List
+        var paginatedUserList = new PaginatedList<UserDto>();
 
-        IQueryable<UserDto> UserQuery = userQueryable
-            .Join(
-                roleQueyable,
+        //create Predicates
+        var userFilterPredicate = PradicateBuilder.True<User>();
+        var roleFilterPredicate = PradicateBuilder.True<Role>();
+
+        //Apply user id filter
+        userFilterPredicate = userFilterPredicate.And(x => x.RoleId.Equals(roleId));
+        userFilterPredicate = userFilterPredicate.And(x => !x.IsDeleted);
+        roleFilterPredicate = roleFilterPredicate.And(x => !x.IsDeleted);
+
+        //Get address filters
+        userFilterPredicate = ApplyUserFilters(userFilterPredicate, userFilterDto);
+
+        //Get user filters
+        roleFilterPredicate = ApplyRoleFilters(roleFilterPredicate, userFilterDto);
+
+        //Apply filters
+        var userQueriable = _userRepo.GetQueyable().Where(userFilterPredicate);
+        var roleQueyable = _roleRepo.GetQueyable().Where(roleFilterPredicate);
+
+        //join
+        IQueryable<UserDto> userQuery = userQueriable.
+            Join(roleQueyable,
                 user => user.RoleId,
                 role => role.Id,
-                (user, role) => new
+                (user, role) => new UserDto()
                 {
-                    user.Id,
-                    user.Name,
-                    RoleId = role.Id,
-                    user.Email,
-                    user.PhNo,
-                    role.RoleName,
-                    RoleDeleted = role.IsDeleted,
-                    user.IsDeleted
+                    Id = user.Id,
+                    Name = user.Name,
+                    RoleId = user.RoleId,
+                    Email = user.Email,
+                    PhNo = user.PhNo,
+                    RoleName = role.RoleName,
                 }
-            )
-            .Where(x => x.RoleId == roleId && !x.IsDeleted && !x.RoleDeleted)
-            .Select(x => new UserDto()
-            {
-                Id = x.Id,
-                Name = x.Name,
-                RoleId = x.RoleId,
-                Email = x.Email,
-                PhNo = x.PhNo,
-                RoleName = x.RoleName,
-            });
+            );
 
+        //ApplyGenericFilter
+        userQuery = ApplyGenericFilters(userQuery, userFilterDto);
 
-        //GenericTextFilterQuery
-        if (!string.IsNullOrWhiteSpace(userFilterDto.GenericTextFilter))
-            UserQuery = UserQuery.Where(x =>
-                        x.Name.ToLower().Contains(userFilterDto.GenericTextFilter.ToLower()) ||
-                        x.RoleName.ToLower().Contains(userFilterDto.GenericTextFilter.ToLower()) ||
-                        x.Email.ToLower().Contains(userFilterDto.GenericTextFilter.ToLower()) ||
-                        x.PhNo.ToLower().Contains(userFilterDto.GenericTextFilter.ToLower())
-                    );
+        //OrderBy
+        userQuery = ApplyOrderByFilter(userQuery, userFilterDto);
 
-        //FieldTextFilterQuery
-        if (!string.IsNullOrWhiteSpace(userFilterDto.RoleNameFilterText))
-            UserQuery = UserQuery.Where(x => x.RoleName.ToLower().Contains(userFilterDto.RoleNameFilterText.ToLower()));
-        if (!string.IsNullOrWhiteSpace(userFilterDto.EmailFilterText))
-            UserQuery = UserQuery.Where(x => x.Email.ToLower().Contains(userFilterDto.EmailFilterText.ToLower()));
-        if (!string.IsNullOrWhiteSpace(userFilterDto.PhNoFilterText))
-            UserQuery = UserQuery.Where(x => x.PhNo.ToLower().Contains(userFilterDto.PhNoFilterText.ToLower()));
-        if (!string.IsNullOrWhiteSpace(userFilterDto.NameFilterText))
-            UserQuery = UserQuery.Where(x => x.Name.ToLower().Contains(userFilterDto.NameFilterText.ToLower()));
-
-        //OrderByQuery
-        if (!string.IsNullOrWhiteSpace(userFilterDto.OrderByField) && userFilterDto.OrderByField.ToLower().Equals(Constants.OrderByNameValue, StringComparison.OrdinalIgnoreCase))
-            UserQuery = UserQuery.OrderBy(x => x.Name);
-        else if (!string.IsNullOrWhiteSpace(userFilterDto.OrderByField) && userFilterDto.OrderByField.ToLower().Equals(Constants.OrderByRoleNameValue, StringComparison.OrdinalIgnoreCase))
-            UserQuery = UserQuery.OrderBy(x => x.RoleName);
-        else if (!string.IsNullOrWhiteSpace(userFilterDto.OrderByField) && userFilterDto.OrderByField.ToLower().Equals(Constants.OrderByEmailValue, StringComparison.OrdinalIgnoreCase))
-            UserQuery = UserQuery.OrderBy(x => x.Email);
-        else if (!string.IsNullOrWhiteSpace(userFilterDto.OrderByField) && userFilterDto.OrderByField.ToLower().Equals(Constants.OrderByPhoneNoValue, StringComparison.OrdinalIgnoreCase))
-            UserQuery = UserQuery.OrderBy(x => x.PhNo);
-        else
-            UserQuery = UserQuery.OrderBy(x => x.Id);
+        //FatchTotalCount
+        paginatedUserList.Count = await userQuery.CountAsync();
 
         //Pagination
-        if (userFilterDto.IsPagination)
-            UserQuery = UserQuery.Skip((userFilterDto.PageNo - 1) * userFilterDto.PageSize).Take(userFilterDto.PageSize);
+        userQuery = ApplyPaginationFilter(userQuery, userFilterDto);
 
-        return await UserQuery.ToListAsync();
+        //FatchItems
+        paginatedUserList.Items = await userQuery.ToListAsync();
+
+        return paginatedUserList;
     }
 
     public async Task<string> InsertUserAsync(UserDto userDto)
@@ -272,5 +233,77 @@ public class UserService : IUserService
     public async Task<bool> IsUserPhoneNumberExistAsync(string phoneNo)
     {
         return await _userRepo.IsUserPhoneNumberExistAsync(phoneNo);
+    }
+
+    private IQueryable<UserDto> ApplyGenericFilters(IQueryable<UserDto> userQuery, UserFilterDto userFilterDto)
+    {
+        //Generic filters
+        if (!string.IsNullOrWhiteSpace(userFilterDto.GenericTextFilter))
+        {
+            var genericFilterPredicate = PradicateBuilder.False<UserDto>();
+            var filterText = userFilterDto.GenericTextFilter.Trim();
+            genericFilterPredicate = genericFilterPredicate
+                                    .Or(x => EF.Functions.ILike(x.Name, $"%{filterText}%"))
+                                    .Or(x => EF.Functions.ILike(x.RoleName, $"%{filterText}%"))
+                                    .Or(x => EF.Functions.ILike(x.Email, $"%{filterText}%"))
+                                    .Or(x => EF.Functions.ILike(x.PhNo, $"%{filterText}%"));
+
+            //Apply generic filters
+            return userQuery.Where(genericFilterPredicate);
+        }
+
+        return userQuery;
+    }
+
+    private Expression<Func<User, bool>> ApplyUserFilters(Expression<Func<User, bool>> userFilterPredicate, UserFilterDto userFilterDto)
+    {
+        //Apply Field Text Filters
+        if (!string.IsNullOrWhiteSpace(userFilterDto.EmailFilterText))
+            userFilterPredicate = userFilterPredicate.And(x => EF.Functions.ILike(x.Email, $"%{userFilterDto.EmailFilterText.Trim()}%"));
+        if (!string.IsNullOrWhiteSpace(userFilterDto.PhNoFilterText))
+            userFilterPredicate = userFilterPredicate.And(x => EF.Functions.ILike(x.PhNo, $"%{userFilterDto.PhNoFilterText.Trim()}%"));
+        if (!string.IsNullOrWhiteSpace(userFilterDto.NameFilterText))
+            userFilterPredicate = userFilterPredicate.And(x => EF.Functions.ILike(x.Name, $"%{userFilterDto.NameFilterText.Trim()}%"));
+
+        return userFilterPredicate;
+    }
+
+    private Expression<Func<Role, bool>> ApplyRoleFilters(Expression<Func<Role, bool>> roleFilterPredicate, UserFilterDto userFilterDto)
+    {
+        //Apply Field Text Filters
+        if (!string.IsNullOrWhiteSpace(userFilterDto.RoleNameFilterText))
+            roleFilterPredicate = roleFilterPredicate.And(x => EF.Functions.ILike(x.RoleName, $"%{userFilterDto.RoleNameFilterText.Trim()}%"));
+
+        return roleFilterPredicate;
+    }
+
+    private IQueryable<UserDto> ApplyOrderByFilter(IQueryable<UserDto> userQuery, UserFilterDto userFilterDto)
+    {
+        var orderByMappings = new Dictionary<string, Expression<Func<UserDto, object>>>(StringComparer.OrdinalIgnoreCase)
+        {
+            { Constants.OrderByNameValue, x => x.Name ?? "" },
+            { Constants.OrderByRoleNameValue, x => x.RoleName ?? "" },
+            { Constants.OrderByEmailValue, x => x.Email ?? "" },
+            { Constants.OrderByPhoneNoValue, x => x.PhNo ?? "" },
+        };
+
+        if (!orderByMappings.TryGetValue(userFilterDto.OrderByField ?? "Id", out var orderByExpression))
+        {
+            orderByExpression = x => x.Id;
+        }
+
+        userQuery = userFilterDto.OrderByEnumValue.Equals(OrderByTypeEnum.Desc)
+            ? userQuery.OrderByDescending(orderByExpression)
+            : userQuery.OrderBy(orderByExpression);
+
+        return userQuery;
+    }
+
+    private IQueryable<UserDto> ApplyPaginationFilter(IQueryable<UserDto> userQuery, UserFilterDto userFilterDto)
+    {
+        if (userFilterDto.IsPagination)
+            userQuery = userQuery.Skip((userFilterDto.PageNo - 1) * userFilterDto.PageSize).Take(userFilterDto.PageSize);
+
+        return userQuery;
     }
 }

@@ -28,7 +28,7 @@ public class ProductRepo : BaseRepo<Product>, IProductRepo
         return product;
     }
 
-    public async Task InsertProductAsync(Product product)
+    public async Task<int> InsertProductAsync(Product product)
     {
         await IsProductDataValidAsync(product);
         if (string.IsNullOrWhiteSpace(product.Description))
@@ -60,7 +60,9 @@ public class ProductRepo : BaseRepo<Product>, IProductRepo
         product.AddedOn = DateTime.Now;
         product.AddedBy = _userContext.loggedInUser.Id;
         await InsertAsync(product);
-        await SaveChangesAsync();   
+        
+        await SaveChangesAsync();
+        return product.Id;  
     }
 
     public async Task UpdateProductAsync(Product product)

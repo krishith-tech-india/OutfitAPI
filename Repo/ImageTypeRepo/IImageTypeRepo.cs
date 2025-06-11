@@ -14,4 +14,5 @@ public interface IImageTypeRepo : IBaseRepo<ImageType>
     Task<bool> IsImageTypeExistByNameAsync(string name);
     Task InsertImageTypeAsync(ImageType imageType);
     Task UpdateImageTypeAsync(ImageType imageType);
+    Task<bool> IsImageTypeExistAsync(int id);
 }
