@@ -28,13 +28,13 @@ namespace Repo
             return _context.Database.BeginTransaction();
         }
 
-        public async Task CompleTransaction(IDbContextTransaction transaction)
+        public async Task CommitTransaction(IDbContextTransaction transaction)
         {
             try
             {
                 await transaction.CommitAsync();
             }
-            finally
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
             }
@@ -65,10 +65,10 @@ namespace Repo
             await _context.SaveChangesAsync();
         }
 
-        public IQueryable<T> Select(Expression<Func<T, bool>> expression)
-        {
-            return _db.Where(expression);
-        }
+        //public IQueryable<T> Where(Expression<Func<T, bool>> expression)
+        //{
+        //    return _db.Where(expression);
+        //}
 
         public void Update(T entity)
         {

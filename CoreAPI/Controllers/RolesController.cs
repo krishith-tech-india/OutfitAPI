@@ -21,29 +21,37 @@ namespace API.Controllers
         }
 
         [Authorize]
-        [HttpGet]
-        public async Task<ApiResponse> GetRole()
+        [HttpPost("GetRoles/")]
+        public async Task<ApiResponse> GetRoles(RoleFilterDto roleFilterDto)
         {
-            return new ApiResponse(HttpStatusCode.OK, await _roleService.GetRolesAsync());
+            return new ApiResponse(HttpStatusCode.OK, await _roleService.GetRolesAsync(roleFilterDto));
         }
 
         [Authorize]
-        [HttpGet("{id}")]
+        [HttpGet("GetRoleById/{id}")]
         public async Task<ApiResponse> GetRoleById(int id)
         {
             return new ApiResponse(HttpStatusCode.OK, await _roleService.GetRoleByIdAsync(id));
         }
 
         [Authorize]
-        [HttpPost]
-        public async Task<ApiResponse> AddRole(RoleDto roleDto)
+        [HttpPost("InsertRole/")]
+        public async Task<ApiResponse> InsertRole(RoleDto roleDto)
         {
-            await _roleService.AddRoleAsync(roleDto);
+            await _roleService.InsertRoleAsync(roleDto);
             return new ApiResponse(HttpStatusCode.OK);
         }
 
         [Authorize]
-        [HttpDelete("{id}")]
+        [HttpPut("UpadateRole/{id}")]
+        public async Task<ApiResponse> UpadateRole(int id,RoleDto roleDto)
+        {
+            await _roleService.UpadateRoleAsync(id,roleDto);
+            return new ApiResponse(HttpStatusCode.OK);
+        }
+
+        [Authorize]
+        [HttpDelete("DeleteRole/{id}")]
         public async Task<ApiResponse> DeleteRole(int id)
         {
             await _roleService.DeleteRoleAsync(id);
@@ -51,11 +59,10 @@ namespace API.Controllers
         }
 
         [Authorize]
-        [HttpPut("{id}")]
-        public async Task<ApiResponse> UpadateRole(int id,RoleDto roleDto)
+        [HttpGet("IsRoleExistByName/{name}")]
+        public async Task<ApiResponse> IsRoleExistByName(string name)
         {
-            await _roleService.UpadateRoleAsync(id,roleDto);
-            return new ApiResponse(HttpStatusCode.OK);
+            return new ApiResponse(HttpStatusCode.OK, await _roleService.IsRoleExistByNameAsync(name));
         }
     }
 }

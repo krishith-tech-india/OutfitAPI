@@ -2,7 +2,10 @@ using Core;
 using Core.Authentication;
 using Data.Contexts;
 using Data.Models;
+using Dto;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
+using System.Xml.Linq;
 
 namespace Repo;
 
@@ -14,10 +17,6 @@ public class RoleRepo : BaseRepo<Role>, IRoleRepo
     {
         _userContext = userContext;
     }
-    public async Task<List<Role>> GetAllRolesAsync()
-    {
-        return await Select(x => !x.IsDeleted).ToListAsync();
-    }
 
     public async Task<Role> GetRoleByIdAsync(int id)
     {
@@ -27,37 +26,39 @@ public class RoleRepo : BaseRepo<Role>, IRoleRepo
         return role;
     }
 
-    public async Task<bool> CheckIsRoleExistByNameAsync(string name)
+    public async Task<bool> IsRoleExistByNameAsync(string name)
     {
-        return await AnyAsync(x => x.RoleName.ToLower().Equals(name.ToLower()) && !x.IsDeleted);
+        return await AnyAsync(x => !x.IsDeleted && x.RoleName.ToLower().Equals(name.ToLower()));
     }
 
     public async Task InsertRoleAsync(Role role)
     {
-        if (string.IsNullOrWhiteSpace(role.RoleName))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest,string.Format(Constants.FieldrequiredExceptionMessage,"Role","Name"));
-        if (await CheckIsRoleExistByNameAsync(role.RoleName))
-            throw new ApiException(System.Net.HttpStatusCode.Conflict,string.Format(Constants.AleadyExistExceptionMessage, "Role", "Name", role.RoleName));
+        await IsRoleDataValidAsync(role);
         role.AddedOn = DateTime.Now;
         role.AddedBy = _userContext.loggedInUser.Id;
         await InsertAsync(role);
         await SaveChangesAsync();
     }
 
-    public async Task<bool> CheckIsRoleIdExistAsync(int id)
-    {
-        return await AnyAsync(x => x.Id.Equals(id) && !x.IsDeleted);
-    }
-
     public async Task UpdateRoleAsync(Role role)
     {
-        if (string.IsNullOrWhiteSpace(role.RoleName))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Role", "Name"));
+        await IsRoleDataValidAsync(role);
         role.LastUpdatedOn = DateTime.Now;
         role.LastUpdatedBy = _userContext.loggedInUser.Id;
         Update(role);
         await SaveChangesAsync();
     }
 
+    public async Task<bool> IsRoleIdExistAsync(int id)
+    {
+        return await AnyAsync(x => x.Id.Equals(id) && !x.IsDeleted);
+    }
 
+    private async Task IsRoleDataValidAsync(Role role)
+    {
+        if (string.IsNullOrWhiteSpace(role.RoleName))
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Role", "Name"));
+        if (await AnyAsync(x => !x.IsDeleted && !x.Id.Equals(role.Id) && x.RoleName.ToLower().Equals(role.RoleName.ToLower())))
+            throw new ApiException(System.Net.HttpStatusCode.Conflict, string.Format(Constants.AleadyExistExceptionMessage, "Role", "Name", role.RoleName));
+    }
 }

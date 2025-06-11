@@ -1,17 +1,17 @@
 ﻿
 using Data.Models;
+using Dto;
 
 namespace Repo;
 
 public interface IUserRepo : IBaseRepo<User>
 {
-    Task<bool> CheckUserEmailExistOrNotAsync(string email); 
-    Task<bool> CheckUserPhoneNoExistOrNotAsync(string phoneNo);
-    Task<List<User>> GetAllUserAsync();
+    Task<bool> IsUserEmailExistAsync(string email); 
+    Task<bool> IsUserPhoneNumberExistAsync(string phoneNo);
     Task<User> GetUserByIdAsync(int id);
     Task InsertUserAsync(User user);
     Task UpdateUserAsync(User user);
-    Task<bool> CheckUserExistUnderRoleIdAsync(int id);
+    Task<bool> IsUserExistUnderRoleIdAsync(int id);
     Task<User?> GetUserByEmailOrPhone(string emailOrPhone, string password);
-    Task<bool> CheckIsUserIdExistAsync(int userid);
+    Task<bool> IsUserIdExistAsync(int userid);
 }

@@ -11,6 +11,11 @@ namespace Mapper
             service.AddScoped<IAddressMapper, AddressMapper>();
             service.AddScoped<IImageTypeMapper, ImageTypeMapper>();
             service.AddScoped<IOrderStatusMapper, OrderStatusMapper>();
+            service.AddScoped<IProductCategoryMapper, ProductCategoryMapper>();
+            service.AddScoped<IProductGroupMapper, ProductGroupMapper>();
+            service.AddScoped<IProductMapper, ProductMapper>();
+            service.AddScoped<IReviewMapper, ReviewMapper>();
+            service.AddScoped<ICartMapper, CartMapper>();
         }
     }
 }

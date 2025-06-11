@@ -1,4 +1,6 @@
 ﻿using Dto;
+using Dto.Common;
+using Dto.OrderStatus;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,9 +11,10 @@ namespace Service;
 
 public interface IOrderStatusService
 {
-    Task<OrderStatusDto> GetOrderStatusByIDAsync(int id);
-    Task<List<OrderStatusDto>> GetAllOrderStatusAsync();
+    Task<PaginatedList<OrderStatusDto>> GetOrderStatusAsync(OrderStatusFilterDto genericFilterDto);
+    Task<OrderStatusDto> GetOrderStatusByIdAsync(int id);
     Task InsertOrderStatusAsync(OrderStatusDto orderStatusDto);
     Task UpdateOrderStatusAsync(int id, OrderStatusDto orderStatusDto);
     Task DeleteOrderStatusAsync(int id);
+    Task<bool> IsOrderStatusExistByNameAsync(string Name);
 }

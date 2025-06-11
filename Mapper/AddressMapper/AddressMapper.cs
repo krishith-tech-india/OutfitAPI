@@ -15,7 +15,7 @@ public class AddressMapper : IAddressMapper
         return new Address
         {
             UserId = addressDto.UserId,
-            Name = addressDto.Name,
+            Name = addressDto.AddressName,
             Line1 = addressDto.Line1,
             Line2 = addressDto.Line2,
             Landmark = addressDto.Landmark,
@@ -25,24 +25,6 @@ public class AddressMapper : IAddressMapper
             State = addressDto.State,
             Country = addressDto.Country,
             Pincode = addressDto.Pincode
-        };
-    }
-    public AddressDto GetAddressDto(Address address)
-    {
-        return new AddressDto
-        {
-            Id = address.Id,
-            UserId = address.UserId.Value,
-            Name = address.Name,
-            Line1 = address.Line1,
-            Line2 = address.Line2,
-            Landmark = address.Landmark,
-            Village = address.Village,
-            City = address.City,
-            District = address.District,
-            State = address.State,
-            Country = address.Country,
-            Pincode = address.Pincode
         };
     }
 }

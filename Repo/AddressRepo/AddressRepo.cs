@@ -2,6 +2,7 @@
 using Core.Authentication;
 using Data.Contexts;
 using Data.Models;
+using Dto;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -21,18 +22,9 @@ public class AddressRepo : BaseRepo<Address>, IAddressRepo
         _userContext = userContext;
     }
 
-    private void CheckDataValidOrnot(Address address)
+    public async Task InsertAddressAsync(Address address)
     {
-        if (string.IsNullOrWhiteSpace(address.Line1))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage,"Address", "Line 1"));
-        if (string.IsNullOrWhiteSpace(address.City))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Address", "City"));
-        if (string.IsNullOrWhiteSpace(address.State))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Address", "State"));
-        if (string.IsNullOrWhiteSpace(address.Country))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Address", "Country"));
-        if (string.IsNullOrWhiteSpace(address.Pincode))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Address", "Pincode"));
+        IsAddressDataValid(address);
         if (string.IsNullOrWhiteSpace(address.Name))
             address.Name = null;
         if (string.IsNullOrWhiteSpace(address.Line2))
@@ -41,31 +33,25 @@ public class AddressRepo : BaseRepo<Address>, IAddressRepo
             address.Landmark = null;
         if (string.IsNullOrWhiteSpace(address.Village))
             address.Village = null;
-        if (string.IsNullOrWhiteSpace(address.District))
-            address.District = null;
-    }
-
-    public async Task<Address> GetAddressByIdAsync(int id)
-    {
-        var address = await GetByIdAsync(id);
-        if (address == null)
-            throw new ApiException(System.Net.HttpStatusCode.NotFound, string.Format(Constants.NotExistExceptionMessage, "Address", "id", id));
-        return address;
-    }
-
-    public async Task<List<Address>> GetAddressByUserIdAsync(int userId)
-    {
-        List<Address> addresses = await Select(x => x.UserId.Equals(userId)).ToListAsync();
-        return addresses;
-    }
-
-    public async Task InsertUserAsync(Address address)
-    {
-        CheckDataValidOrnot(address);
         address.AddedOn = DateTime.Now;
         address.AddedBy = _userContext.loggedInUser.Id;
         await InsertAsync(address);
         await SaveChangesAsync();
     }
 
+    private void IsAddressDataValid(Address address)
+    {
+        if (string.IsNullOrWhiteSpace(address.Line1))
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage,"Address", "Line 1"));
+        if (string.IsNullOrWhiteSpace(address.City))
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Address", "City"));
+        if (string.IsNullOrWhiteSpace(address.District))
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Address", "District"));
+        if (string.IsNullOrWhiteSpace(address.State))
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Address", "State"));
+        if (string.IsNullOrWhiteSpace(address.Country))
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Address", "Country"));
+        if (string.IsNullOrWhiteSpace(address.Pincode))
+            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.FieldrequiredExceptionMessage, "Address", "Pincode"));
+    }
 }

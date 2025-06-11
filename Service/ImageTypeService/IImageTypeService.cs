@@ -1,5 +1,6 @@
 ﻿using Data.Models;
 using Dto;
+using Dto.Common;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,10 +11,10 @@ namespace Service;
 
 public interface IImageTypeService
 {
-    Task<List<ImageTypeDto>> GetImageTypeAsync();
+    Task<PaginatedList<ImageTypeDto>> GetImageTypesAsync(ImageTypeFilterDto imageTypeFilterDto);
     Task<ImageTypeDto> GetImageTypeByIdAsync(int id);
     Task<bool> IsImageTypeExistByNameAsync(string name);
-    Task AddImageType(ImageTypeDto imageTypeDto);
+    Task InsertImageTypeAsync(ImageTypeDto imageTypeDto);
     Task UpadateImageTypeAsync(int id, ImageTypeDto imageTypeDto);
     Task DeleteImageTypeAsync(int id);
 }
