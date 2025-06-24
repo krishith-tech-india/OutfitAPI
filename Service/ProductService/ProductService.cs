@@ -295,7 +295,7 @@ public class ProductService : IProductService
     public async Task<List<ProductDto>> GetProductByGroupIdAsync(int id, ProductFilterDto productFilterDto)
     {
         if (!await _productGroupRepo.IsProductGroupIdExistAsync(id))
-            throw new ApiException(System.Net.HttpStatusCode.BadRequest, string.Format(Constants.NotExistExceptionMessage, "Product", " Group Id", id));
+            throw new ApiException(HttpStatusCode.BadRequest, string.Format(Constants.NotExistExceptionMessage, "Product", " Group Id", id));
 
         var productQueyable = _productRepo.GetQueyable();
         var productGroupQueyable = _productGroupRepo.GetQueyable();
